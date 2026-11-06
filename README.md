@@ -56,6 +56,11 @@ web/
 .github/workflows/web.yml   tes + build + deploy GitHub Pages
 ```
 
+## Main langsung di aplikasi Claude
+
+Game juga diterbitkan sebagai Artifact (satu file HTML mandiri) supaya bisa dibuka dari aplikasi Claude:
+`npm run build && npm run artifact` → `web/dist-artifact/menara-lapis.html`.
+
 ## Pengembangan (opsional, kalau ada komputer)
 
 ```
