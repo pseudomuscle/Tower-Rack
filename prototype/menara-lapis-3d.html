@@ -1,0 +1,189 @@
+<title>Menara Lapis 3D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Figtree:wght@400;600;700&display=swap">
+<style>
+/* Layout: layar game tegak 9:15 di tengah, HUD di atas kanvas, data iklan di bawah. Tema kue lapis di langit senja. */
+:root{
+  --bg:#141a24; --surface:#1c2431; --line:#2d394b;
+  --fg:#fbf1dc; --muted:#a3adbd; --accent:#ffb84d; --accent-ink:#2a1a00;
+  --display:"Baloo 2","Trebuchet MS",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{background:var(--bg);color:var(--fg)}
+body{font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px}
+.wrap{max-width:440px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+#stage{position:relative;width:100%;aspect-ratio:9/15;max-height:78vh;margin:0 auto;border-radius:20px;overflow:hidden;
+  background:linear-gradient(180deg,#f7a072 0%,#f4c38b 45%,#ffe7c2 100%);touch-action:manipulation;cursor:pointer;user-select:none;-webkit-user-select:none}
+#stage canvas{display:block;width:100%;height:100%}
+.hud{position:absolute;inset:0;pointer-events:none;display:flex;flex-direction:column;align-items:center;padding-top:22px;color:#3a1f12}
+#score{font-family:var(--display);font-weight:800;font-size:68px;line-height:1;text-shadow:0 2px 0 rgba(255,255,255,.5)}
+#best{font-weight:700;font-size:13px;opacity:.75}
+#streak{margin-top:6px;font-family:var(--display);font-size:20px;color:#fff;background:#e05a7a;padding:0 12px;border-radius:999px;opacity:0;transition:opacity .2s}
+#streak.on{opacity:1}
+.cover{position:absolute;left:16px;right:16px;bottom:22px;background:rgba(28,20,16,.82);color:var(--fg);border-radius:16px;padding:14px;text-align:center;pointer-events:none}
+.cover b{display:block;font-family:var(--display);font-size:26px;line-height:1.1}
+.cover span{color:#e8d9c0;font-size:14px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.panel h3{margin:0;font-family:var(--display);font-size:18px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.stat{background:var(--bg);border-radius:10px;padding:8px}
+.stat b{display:block;font-family:var(--display);font-size:22px;line-height:1.1;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.panel ul{margin:0;padding-left:18px;color:var(--muted);font-size:13.5px;display:flex;flex-direction:column;gap:4px}
+.panel ul b{color:var(--fg)}
+.btn{font:700 14px var(--body);border-radius:12px;padding:11px 14px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--fg)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;color:var(--muted)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.modal{position:fixed;inset:0;background:rgba(5,8,12,.72);display:flex;align-items:flex-end;justify-content:center;z-index:50;
+  padding:16px max(16px,env(safe-area-inset-right,0px)) max(16px,env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.sheet{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:18px;max-width:420px;width:100%;display:flex;flex-direction:column;gap:10px}
+.eyebrow{margin:0;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:700}
+.sheet h2{margin:0;font-family:var(--display);font-size:24px;line-height:1.1}
+.sheet p{margin:0;color:var(--muted)}
+.adbox{background:var(--bg);border-radius:12px;padding:26px;text-align:center;color:var(--muted);font-size:12px;letter-spacing:.08em}
+.adbox b{display:block;font-family:var(--display);font-size:44px;color:var(--fg);letter-spacing:0}
+.actions{display:flex;flex-direction:column;gap:8px}
+.err{color:var(--muted);text-align:center;padding:40px 16px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+  <div id="stage" aria-label="Menara Lapis 3D, ketuk untuk menjatuhkan lapisan">
+    <div class="hud">
+      <div id="score">0</div>
+      <div id="best">Rekor 0</div>
+      <div id="streak">Pas!</div>
+    </div>
+    <div class="cover" id="cover"><b>Menara Lapis</b><span>Ketuk untuk mulai. Tumpuk lapisan kue setinggi mungkin.</span></div>
+  </div>
+
+  <section class="panel">
+    <h3>Data iklan</h3>
+    <div class="stats">
+      <div class="stat"><b id="sPlays">0</b><span>main selesai</span></div>
+      <div class="stat"><b id="sOffered">0</b><span>revive ditawarkan</span></div>
+      <div class="stat"><b id="sRate">–</b><span>diterima</span></div>
+    </div>
+    <ul>
+      <li>Lapisan bergerak bergantian dari kiri dan kanan. Bagian yang meleset terpotong dan jatuh.</li>
+      <li><b>Pas sempurna 3×</b> berturut-turut membuat lapisan melebar lagi.</li>
+      <li><b>Revive</b> ditawarkan sekali per permainan mulai skor 3. Judulnya jadi <b>"Hampir pecah rekor!"</b> saat skor ≥70% rekor.</li>
+      <li>Kecepatan naik bertahap tiap lantai, sama untuk semua pemain.</li>
+    </ul>
+    <button class="btn ghost" id="resetStats">Hapus data</button>
+  </section>
+</div>
+
+<div class="modal" id="adModal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="adTitle">
+    <p class="eyebrow">Hadiah dari iklan</p>
+    <h2 id="adTitle"></h2>
+    <p id="adText"></p>
+    <div class="adbox" id="adPlaying" hidden>IKLAN SIMULASI<b id="adCount">3</b></div>
+    <div class="actions" id="adActions">
+      <button class="btn primary" id="adWatch">▶ Tonton iklan &amp; lanjut</button>
+      <button class="btn ghost" id="adSkip">Tidak, terima kasih</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const stage=$('stage');
+if(!window.THREE){stage.innerHTML='<p class="err">Mesin 3D gagal dimuat. Muat ulang halaman.</p>';return}
+
+/* ---- Data iklan ---- */
+const SK='stats_lapis3d';
+const stats=()=>store.get(SK,{plays:0,offered:0,accepted:0});
+function track(f){const s=stats();s[f]++;store.set(SK,s);renderStats()}
+function renderStats(){const s=stats();$('sPlays').textContent=s.plays;$('sOffered').textContent=s.offered;$('sRate').textContent=s.offered?Math.round(s.accepted/s.offered*100)+'%':'–'}
+$('resetStats').onclick=()=>{store.set(SK,{plays:0,offered:0,accepted:0});renderStats()};
+renderStats();
+
+/* ---- Modal iklan simulasi ---- */
+let adCb=null;
+function offer(o){track('offered');adCb=o;$('adTitle').textContent=o.title;$('adText').textContent=o.text;$('adPlaying').hidden=true;$('adActions').hidden=false;$('adModal').hidden=false;$('adWatch').focus()}
+$('adWatch').onclick=()=>{$('adActions').hidden=true;$('adPlaying').hidden=false;let n=3;$('adCount').textContent=n;
+  const t=setInterval(()=>{n--;$('adCount').textContent=n;if(n<=0){clearInterval(t);$('adModal').hidden=true;const c=adCb;adCb=null;track('accepted');c.onAccept()}},1000)};
+$('adSkip').onclick=()=>{$('adModal').hidden=true;const c=adCb;adCb=null;c.onDecline()};
+
+/* ---- Scene 3D ---- */
+const H=0.5,START=3,RANGE=4.6,D=6.2;
+const PAL=['#e05a7a','#f7e6c4','#4fae6b','#f7e6c4','#8a5634','#f7e6c4','#f2a541','#f7e6c4','#7a6fd6','#f7e6c4'];
+const renderer=new THREE.WebGLRenderer({antialias:true,alpha:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));
+stage.prepend(renderer.domElement);
+const scene=new THREE.Scene();
+const camera=new THREE.OrthographicCamera(-1,1,1,-1,-100,200);
+scene.add(new THREE.AmbientLight(0xffffff,0.55));
+const sun=new THREE.DirectionalLight(0xfff1dd,0.75);sun.position.set(6,14,3);scene.add(sun);
+const fill=new THREE.DirectionalLight(0xffc0a0,0.25);fill.position.set(-8,4,-6);scene.add(fill);
+function resize(){const w=stage.clientWidth,h=stage.clientHeight;renderer.setSize(w,h,false);const a=w/h;camera.left=-D*a;camera.right=D*a;camera.top=D;camera.bottom=-D;camera.updateProjectionMatrix()}
+window.addEventListener('resize',resize);
+
+const plate=new THREE.Mesh(new THREE.CylinderGeometry(2.5,2.3,0.22,48),new THREE.MeshLambertMaterial({color:'#fdfaf3'}));
+plate.position.y=-H/2-0.15;scene.add(plate);
+
+let stack=[],falling=[],fx=[],cur=null,axis='x',dir=1,state='ready',streak=0,revived=false,best=store.get('lapis_best',0),camY=0,zoom=1;
+const score=()=>Math.max(0,stack.length-1);
+function box(b,i){const m=new THREE.Mesh(new THREE.BoxGeometry(b.w,H,b.d),new THREE.MeshLambertMaterial({color:PAL[i%PAL.length]}));m.position.set(b.x,i*H,b.z);scene.add(m);return m}
+function kill(m){scene.remove(m);m.geometry.dispose();m.material.dispose()}
+function reset(){stack.forEach(b=>kill(b.mesh));falling.forEach(f=>kill(f.mesh));fx.forEach(f=>kill(f.mesh));if(cur)kill(cur.mesh);
+  stack=[];falling=[];fx=[];cur=null;streak=0;revived=false;
+  const b={x:0,z:0,w:START,d:START};b.mesh=box(b,0);stack.push(b);hud()}
+function spawn(){const top=stack[stack.length-1],i=stack.length;axis=i%2?'x':'z';dir=1;
+  cur={x:top.x,z:top.z,w:top.w,d:top.d};cur[axis]=-RANGE;cur.mesh=box(cur,i);cur.speed=Math.min(3.2+i*0.16,9)}
+function hud(){$('score').textContent=score();$('best').textContent='Rekor '+best;$('streak').textContent=streak>=2?'Pas ×'+streak:'Pas!'}
+function buzz(ms){try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
+function perfectFx(b,i){const m=new THREE.Mesh(new THREE.PlaneGeometry(b.w+0.5,b.d+0.5),new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:.8,side:THREE.DoubleSide}));
+  m.rotation.x=-Math.PI/2;m.position.set(b.x,i*H+H/2+0.01,b.z);scene.add(m);fx.push({mesh:m,t:0})}
+
+function drop(){
+  if(state==='ready'||state==='end'){reset();state='play';$('cover').hidden=true;spawn();return}
+  if(state!=='play'||!cur)return;
+  const top=stack[stack.length-1],i=stack.length,key=axis==='x'?'w':'d',size=top[key],delta=cur[axis]-top[axis],over=Math.abs(delta);
+  if(over>=size){falling.push({mesh:cur.mesh,vy:0,spin:(Math.random()-.5)*0.08});cur=null;streak=0;hud();buzz(60);return gameOver()}
+  let ns,nc;
+  if(over<=0.12){streak++;ns=size;if(streak>=3)ns=Math.min(START,size+0.25);nc=top[axis];buzz(15)}
+  else{streak=0;ns=size-over;nc=top[axis]+delta/2;
+    const ch={x:cur.x,z:cur.z,w:cur.w,d:cur.d};ch[key]=over;ch[axis]=nc+Math.sign(delta)*(ns/2+over/2);
+    falling.push({mesh:box(ch,i),vy:0,spin:(Math.random()-.5)*0.06})}
+  kill(cur.mesh);const b={x:cur.x,z:cur.z,w:cur.w,d:cur.d};b[key]=ns;b[axis]=nc;b.mesh=box(b,i);stack.push(b);
+  if(streak>0)perfectFx(b,i);
+  $('streak').classList.toggle('on',streak>=1);setTimeout(()=>$('streak').classList.remove('on'),700);
+  hud();spawn()}
+
+function gameOver(){state='over';const s=score();
+  if(!revived&&s>=3){const near=best>0&&s>=best*0.7;
+    setTimeout(()=>offer({title:near?'Hampir pecah rekor!':'Lanjut menumpuk?',text:'Skor '+s+(best?', rekor '+best:'')+'. Tonton iklan untuk mengulang lapisan terakhir.',
+      onAccept(){revived=true;state='play';spawn()},onDecline:end}),450)}
+  else setTimeout(end,350)}
+function end(){state='end';track('plays');const s=score();const rec=s>best;if(rec){best=s;store.set('lapis_best',best)}hud();
+  const c=$('cover');c.innerHTML='<b>'+(rec?'Rekor baru: '+s+'!':'Menara selesai · '+s)+'</b><span>Rekor '+best+'. Ketuk untuk main lagi.</span>';c.hidden=false}
+
+stage.addEventListener('pointerdown',e=>{if(!$('adModal').hidden)return;e.preventDefault();drop()});
+document.addEventListener('keydown',e=>{if(e.code==='Space'&&$('adModal').hidden){e.preventDefault();drop()}});
+
+let last=performance.now();
+function loop(now){const dt=Math.min(0.05,(now-last)/1000);last=now;
+  if(state==='play'&&cur){cur[axis]+=cur.speed*dir*dt;if(cur[axis]>RANGE){cur[axis]=RANGE;dir=-1}if(cur[axis]<-RANGE){cur[axis]=-RANGE;dir=1}cur.mesh.position[axis]=cur[axis]}
+  falling=falling.filter(f=>{f.vy-=18*dt;f.mesh.position.y+=f.vy*dt;f.mesh.rotation.x+=f.spin;f.mesh.rotation.z+=f.spin;if(f.mesh.position.y<camY-25){kill(f.mesh);return false}return true});
+  fx=fx.filter(f=>{f.t+=dt;f.mesh.material.opacity=Math.max(0,.8-f.t*1.6);f.mesh.scale.setScalar(1+f.t*0.6);if(f.t>0.5){kill(f.mesh);return false}return true});
+  const target=stack.length*H;camY+=(target-camY)*Math.min(1,dt*4);
+  const tz=state==='end'?Math.min(1,D/(stack.length*H*0.62+3)):1;zoom+=(tz-zoom)*Math.min(1,dt*3);
+  if(Math.abs(camera.zoom-zoom)>1e-4){camera.zoom=zoom;camera.updateProjectionMatrix()}
+  const ly=state==='end'?camY*0.5:camY+0.6;
+  camera.position.set(8,ly+8,8);camera.lookAt(0,ly,0);
+  renderer.render(scene,camera);requestAnimationFrame(loop)}
+resize();reset();hud();requestAnimationFrame(loop);
+})();
+</script>
