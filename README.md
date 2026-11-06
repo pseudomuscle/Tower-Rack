@@ -44,8 +44,9 @@ web/
     game.js           mesin 3D: scene, tumpukan, kamera, status permainan
     logic.js          aturan inti murni (potong, sempurna, kecepatan) — dites
     buildings.js      data level: lantai, tinggi, kecepatan, warna, fakta  ← atur keseimbangan di sini
-    textures.js       tekstur prosedural (marmer, batu lengkung, kaca) di <canvas>
-    crowns.js         puncak bangunan & dekorasi tanah (low-poly)
+    textures.js       tekstur PBR prosedural (marmer, galeri lengkung, kaca) di <canvas>
+    crowns.js         puncak bangunan (low-poly)
+    scenery.js        alas bangunan, tanah, pohon, kota sekitar, langit pantulan
     menu.js           menu utama & Album Koleksi
     progress.js       simpan progres, kunci level, foto album
     ads.js            iklan hadiah (sekarang simulasi; nanti diganti AdMob)

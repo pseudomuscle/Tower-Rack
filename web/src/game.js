@@ -3,7 +3,8 @@
 import * as THREE from 'three';
 import { H, START, RANGE, axisFor, speedFor, resolveDrop, metersAt, canRevive } from './logic.js';
 import { createLook, disposeObject } from './textures.js';
-import { buildCrown, buildDecor } from './crowns.js';
+import { buildCrown } from './crowns.js';
+import { buildScenery, makeEnvironment } from './scenery.js';
 
 const D = 6.2;                 // setengah tinggi pandangan kamera ortografis
 const ORBIT_R = 8 * Math.SQRT2;
@@ -22,17 +23,25 @@ export class Game {
     this.hooks = hooks;
     const r = (this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }));
     r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    r.toneMapping = THREE.ACESFilmicToneMapping;
+    r.toneMappingExposure = 1.0;
+    r.shadowMap.enabled = true;
+    r.shadowMap.type = THREE.PCFSoftShadowMap;
     stage.prepend(r.domElement);
 
     const scene = (this.scene = new THREE.Scene());
     this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, -100, 300);
-    scene.add(new THREE.AmbientLight(0xffffff, 1.6));
-    const sun = new THREE.DirectionalLight(0xfff1dd, 2.3);
-    sun.position.set(6, 14, 3);
-    scene.add(sun);
-    const fill = new THREE.DirectionalLight(0xffc0a0, 0.7);
-    fill.position.set(-8, 4, -6);
-    scene.add(fill);
+    this.hemi = new THREE.HemisphereLight(0xdfefff, 0x6b6b60, 0.6);
+    scene.add(this.hemi);
+    const sun = (this.sun = new THREE.DirectionalLight(0xfff1dd, 3));
+    sun.castShadow = true;
+    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.bias = -0.0004;
+    sun.shadow.normalBias = 0.03;
+    sun.shadow.radius = 3;
+    scene.add(sun, sun.target);
+    this.sunDir = new THREE.Vector3(6, 14, 3).normalize();
+    this.shadowHalf = 0;
 
     this.tower = new THREE.Group();
     scene.add(this.tower);
@@ -83,31 +92,26 @@ export class Game {
 
   /** Muat bangunan (level) baru. */
   load(b) {
+    this.flushSnapshot();
     this.clearTower();
     disposeObject(this.env); this.env.clear();
     if (this.look) this.look.dispose();
+    if (this.envRT) this.envRT.dispose();
     this.b = b;
     this.look = createLook(b);
-    this.buildGround(b);
+    this.env.add(buildScenery(b));
+    this.envRT = makeEnvironment(this.renderer, b);
+    this.scene.environment = this.envRT.texture;
+    this.scene.environmentIntensity = 0.75;
+    this.sun.color.set(b.sun.color);
+    this.sun.intensity = b.sun.intensity;
+    this.sunDir.set(...b.sun.dir).normalize();
+    this.hemi.color.set(b.sky[1]);
+    this.hemi.groundColor.set(b.groundColor || '#8a7a60');
     this.reset();
     this.state = 'ready';
     this.camY = this.stack.length * H; this.lookY = this.camY + 0.6;
     this.zoom = 1; this.angle = Math.PI / 4;
-  }
-
-  buildGround(b) {
-    if (b.style === 'cake') {
-      const plate = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.3, 0.22, 48), new THREE.MeshLambertMaterial({ color: '#fdfaf3' }));
-      plate.position.y = -H / 2 - 0.11;
-      this.env.add(plate);
-      return;
-    }
-    const ground = new THREE.Mesh(new THREE.CylinderGeometry(5.2, 5.0, 0.5, 48), new THREE.MeshLambertMaterial({ color: b.ground }));
-    ground.position.y = -H / 2 - 0.25;
-    this.env.add(ground);
-    const decor = buildDecor(b.decor);
-    decor.position.y = -H / 2;
-    this.env.add(decor);
   }
 
   clearTower() {
@@ -131,6 +135,8 @@ export class Game {
   box(b, i) {
     const m = new THREE.Mesh(this.look.geometry(b, i), this.look.materials(i));
     m.position.set(b.x, i * H, b.z);
+    m.castShadow = true; m.receiveShadow = true;
+    this.look.decorate(m, b, i);
     this.tower.add(m);
     return m;
   }
@@ -152,6 +158,7 @@ export class Game {
 
   /** Ulangi level yang sama dari awal. */
   restart() {
+    this.flushSnapshot();
     this.reset();
     this.state = 'ready';
     this.start();
@@ -192,7 +199,7 @@ export class Game {
   perfectFx(b, i) {
     const m = new THREE.Mesh(
       new THREE.PlaneGeometry(b.w + 0.5, b.d + 0.5),
-      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8, side: THREE.DoubleSide })
+      new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8, side: THREE.DoubleSide, toneMapped: false, depthWrite: false })
     );
     m.rotation.x = -Math.PI / 2;
     m.position.set(b.x, i * H + H / 2 + 0.01, b.z);
@@ -299,6 +306,7 @@ export class Game {
       this.lookY += (this.camY + 0.6 - this.lookY) * Math.min(1, dt * 4);
       this.angle += (Math.PI / 4 - this.angle) * Math.min(1, dt * 3);
     }
+    this.updateShadow();
     const cam = this.camera;
     if (Math.abs(cam.zoom - this.zoom) > 1e-4) { cam.zoom = this.zoom; cam.updateProjectionMatrix(); }
     cam.position.set(Math.cos(this.angle) * ORBIT_R, this.lookY + 8, Math.sin(this.angle) * ORBIT_R);
@@ -307,9 +315,44 @@ export class Game {
 
     if (this.snapAt != null && this.state === 'complete' && this.completeT >= this.snapAt) {
       this.snapAt = null;
-      try { this.hooks.onSnapshot?.(this.capture()); } catch (e) { /* snapshot opsional */ }
+      try { this.hooks.onSnapshot?.(this.capture(), this.b); } catch (e) { /* snapshot opsional */ }
     }
     requestAnimationFrame(this.loop);
+  }
+
+  /**
+   * Kalau pemain meninggalkan layar selesai sebelum foto album diambil,
+   * selesaikan animasi seketika lalu ambil fotonya sekarang.
+   */
+  flushSnapshot() {
+    if (this.state !== 'complete' || this.snapAt == null) return;
+    this.snapAt = null;
+    if (this.crown) this.crown.scale.setScalar(1);
+    this.tower.rotation.z = -(this.b.lean || 0);
+    this.angle = Math.PI / 4 + 0.5;
+    this.frameWhole(0.04, 0.5, 1);
+    this.camera.zoom = this.zoom; this.camera.updateProjectionMatrix();
+    this.camera.position.set(Math.cos(this.angle) * ORBIT_R, this.lookY + 8, Math.sin(this.angle) * ORBIT_R);
+    this.camera.lookAt(0, this.lookY, 0);
+    this.updateShadow();
+    this.renderer.render(this.scene, this.camera);
+    try { this.hooks.onSnapshot?.(this.capture(), this.b); } catch (e) { /* snapshot opsional */ }
+  }
+
+  /** Kotak bayangan matahari mengikuti bagian menara yang sedang terlihat. */
+  updateShadow() {
+    const whole = this.state === 'complete' || this.state === 'failed';
+    const topY = this.stack.length * H;
+    const half = whole ? Math.max(8, topY / 2 + 4) : 8;
+    const cy = whole ? topY / 2 : Math.max(0, this.lookY - 1);
+    const sun = this.sun, cam = sun.shadow.camera;
+    sun.target.position.set(0, cy, 0);
+    sun.position.copy(this.sunDir).multiplyScalar(half + 20).add(sun.target.position);
+    if (half !== this.shadowHalf) {
+      this.shadowHalf = half;
+      Object.assign(cam, { left: -half, right: half, top: half, bottom: -half, near: 0.5, far: half * 2 + 45 });
+      cam.updateProjectionMatrix();
+    }
   }
 
   /** Ambil gambar menara (dipanggil tepat setelah render) untuk album. */

@@ -21,6 +21,7 @@ let streakTimer = 0;
 const setHudCompact = (on) => $('hud').classList.toggle('compact', on);
 
 function show(name) {
+  if (game && name !== 'play') game.flushSnapshot();
   $('home').hidden = name !== 'home';
   $('album').hidden = name !== 'album';
   $('hud').hidden = name !== 'play';
@@ -137,7 +138,7 @@ const hooks = {
     $('doneSheet').hidden = false;
     nextBtn.focus();
   },
-  onSnapshot(url) { if (current && !current.free) saveSnapshot(current.id, url); }
+  onSnapshot(url, b) { if (b && !b.free) saveSnapshot(b.id, url); }
 };
 
 /* ---------- Tombol ---------- */
