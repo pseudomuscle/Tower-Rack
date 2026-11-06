@@ -58,6 +58,13 @@ Tiga level pertama yang direncanakan (nama samaran, model buatan sendiri):
 - AdMob: gratis.
 
 ## Langkah pertama untuk Claude Code
-1. Buat struktur repo: `web/` (game Three.js, dipecah dari prototipe jadi beberapa modul), `README.md`, file ini.
-2. Implementasikan mode level + 3 bangunan + layar menara selesai + album koleksi.
+1. ✅ Buat struktur repo: `web/` (game Three.js, dipecah dari prototipe jadi beberapa modul), `README.md`, file ini.
+2. ✅ Implementasikan mode level + 3 bangunan + layar menara selesai + album koleksi.
 3. Setelah gameplay disetujui, tambahkan Capacitor + AdMob + workflow GitHub Actions.
+   (Sudah ada: workflow **Web** untuk tes, build, dan deploy ke GitHub Pages.)
+
+## Status
+- Versi web: Vite + Three.js 0.170 (dipaket lokal, tidak dari CDN, supaya nanti jalan offline di Capacitor).
+- Keseimbangan level (jumlah lantai, kecepatan) ada di `web/src/buildings.js`. Angka awal: 20 / 30 / 60 lantai,
+  kecepatan maks 5.5 / 7 / 9 unit per detik. Perlu diuji main langsung di HP.
+- Iklan masih simulasi (`web/src/ads.js`); titik ganti ke AdMob ada di `playRewardedAd()`.
