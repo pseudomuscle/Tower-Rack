@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <meta name="theme-color" content="#141a24">
+  <title>Menara Lapis</title>
+  <meta name="description" content="Game kasual 3D: tumpuk lantai bangunan sampai menaranya selesai.">
+</head>
+<body>
+<div id="app">
+
+  <!-- Layar permainan -->
+  <div id="stage" aria-label="Arena permainan. Ketuk untuk menjatuhkan lantai.">
+    <div class="hud" id="hud" hidden>
+      <button class="icon-btn" id="btnBack" aria-label="Kembali ke menu">‹</button>
+      <div class="hud-main">
+        <div id="hudFloor">0</div>
+        <div id="hudSub"></div>
+        <div class="bar" id="hudBarWrap"><i id="hudBar"></i></div>
+        <div id="streak">Pas!</div>
+      </div>
+    </div>
+    <div class="cover" id="cover" hidden><b id="coverTitle"></b><span id="coverText"></span></div>
+  </div>
+
+  <!-- Level selesai -->
+  <div class="dock" id="doneSheet" hidden>
+    <div class="sheet" role="dialog" aria-labelledby="doneName">
+      <p class="eyebrow">Menara selesai!</p>
+      <h2 id="doneName"></h2>
+      <p class="meta" id="doneMeta"></p>
+      <p class="badge" id="doneNew" hidden>★ Baru masuk Album Koleksi</p>
+      <div class="fact"><b>Tahukah kamu?</b><span id="doneFact"></span></div>
+      <div class="actions">
+        <button class="btn primary" id="doneNext"></button>
+        <div class="row">
+          <button class="btn" id="doneAlbum">Album</button>
+          <button class="btn" id="doneAgain">Main lagi</button>
+          <button class="btn ghost" id="doneMenu">Menu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gagal -->
+  <div class="dock" id="failSheet" hidden>
+    <div class="sheet" role="dialog" aria-labelledby="failTitle">
+      <p class="eyebrow" id="failEyebrow">Menara runtuh</p>
+      <h2 id="failTitle"></h2>
+      <p class="meta" id="failMeta"></p>
+      <div class="actions">
+        <button class="btn primary" id="failRetry">Coba lagi</button>
+        <button class="btn ghost" id="failMenu">Pilih bangunan</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Menu utama -->
+  <section class="screen" id="home">
+    <header class="brand">
+      <h1>Menara Lapis</h1>
+      <p>Tumpuk lantai sampai menaranya selesai.</p>
+    </header>
+    <div class="levels" id="levelList"></div>
+    <div class="row">
+      <button class="btn" id="btnAlbum">Album Koleksi <span id="albumCount"></span></button>
+      <button class="btn" id="btnFree">Mode bebas</button>
+    </div>
+    <details class="panel">
+      <summary>Data iklan (uji)</summary>
+      <div class="stats">
+        <div class="stat"><b id="sPlays">0</b><span>main selesai</span></div>
+        <div class="stat"><b id="sOffered">0</b><span>revive ditawarkan</span></div>
+        <div class="stat"><b id="sRate">–</b><span>diterima</span></div>
+      </div>
+      <button class="btn ghost" id="resetStats">Hapus data iklan</button>
+    </details>
+    <p class="note">Nama dan model bangunan dibuat sendiri, hanya terinspirasi bangunan nyata.</p>
+  </section>
+
+  <!-- Album koleksi -->
+  <section class="screen" id="album" hidden>
+    <header class="topbar">
+      <button class="icon-btn" id="albumBack" aria-label="Kembali">‹</button>
+      <div>
+        <h2>Album Koleksi Menara</h2>
+        <p id="albumSummary"></p>
+      </div>
+    </header>
+    <div class="album-grid" id="albumGrid"></div>
+  </section>
+
+  <!-- Detail album -->
+  <div class="modal" id="albumDetail" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="detailName">
+      <div class="detail-img" id="detailImg"></div>
+      <p class="eyebrow" id="detailEyebrow"></p>
+      <h2 id="detailName"></h2>
+      <p class="meta" id="detailMeta"></p>
+      <div class="fact"><b>Tahukah kamu?</b><span id="detailFact"></span></div>
+      <div class="actions">
+        <button class="btn primary" id="detailPlay">Bangun lagi</button>
+        <button class="btn ghost" id="detailClose">Tutup</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Iklan hadiah -->
+  <div class="modal" id="adModal" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="adTitle">
+      <p class="eyebrow">Hadiah dari iklan</p>
+      <h2 id="adTitle"></h2>
+      <p id="adText"></p>
+      <div class="adbox" id="adPlaying" hidden>IKLAN SIMULASI<b id="adCount">3</b></div>
+      <div class="actions" id="adActions">
+        <button class="btn primary" id="adWatch">▶ Tonton iklan &amp; lanjut</button>
+        <button class="btn ghost" id="adSkip">Tidak, terima kasih</button>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
