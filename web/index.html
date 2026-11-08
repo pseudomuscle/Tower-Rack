@@ -14,6 +14,7 @@
   <div id="stage" aria-label="Arena permainan. Ketuk untuk menjatuhkan lantai.">
     <div class="hud" id="hud" hidden>
       <button class="icon-btn" id="btnBack" aria-label="Kembali ke menu">‹</button>
+      <button class="icon-btn mute" id="btnMute" aria-label="Matikan suara">🔊</button>
       <div class="hud-main">
         <div id="hudFloor">0</div>
         <div id="hudSub"></div>
@@ -75,6 +76,10 @@
     <div class="row">
       <button class="btn" id="btnAlbum">Album Koleksi <span id="albumCount"></span></button>
       <button class="btn" id="btnFree">Mode bebas</button>
+    </div>
+    <div class="row">
+      <button class="btn" id="btnMusic" aria-pressed="true">♪ Musik: nyala</button>
+      <button class="btn" id="btnSfx" aria-pressed="true">🔊 Efek: nyala</button>
     </div>
     <div id="regionList" class="regions"></div>
     <details class="panel">

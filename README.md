@@ -33,6 +33,9 @@ bisa diunduh dari halaman run di tab Actions (artifact `menara-web`).
 - **Bintang 1–3** per level (dari jumlah pas sempurna), total 180 bintang.
 - Level terbuka berurutan; tombol **Lanjutkan** langsung ke level berikutnya.
 - **Album Koleksi**: foto menara buatan pemain per wilayah, tanggal selesai, bintang, fakta.
+- **Musik & efek suara** disintesis langsung dengan Web Audio (tanpa file suara luar): musik berbeda
+  tiap wilayah, bunyi lantai mendarat, terpotong, pas sempurna (nada naik), melebar, meleset, gagal,
+  fanfare menara selesai, bintang, dan koin hadiah. Bisa dimatikan terpisah (musik / efek).
 - **Mode bebas**: gameplay prototipe asli.
 - Revive via iklan hadiah **simulasi** (sekali per permainan, mulai lantai 3, selalu ada tombol
   "Tidak, terima kasih").
@@ -55,6 +58,7 @@ web/
     menu.js           menu utama & Album Koleksi
     progress.js       simpan progres, kunci level, foto album
     ads.js            iklan hadiah (sekarang simulasi; nanti diganti AdMob)
+    audio.js          musik per wilayah & efek suara (Web Audio, disintesis)
     storage.js        localStorage yang aman
     style.css
   test/logic.test.js  tes aturan inti (node --test)

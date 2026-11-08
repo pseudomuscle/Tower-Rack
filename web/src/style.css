@@ -158,3 +158,6 @@ p { margin: 0; }
 .album-region h3 { font-size: 18px; color: var(--muted); }
 .album-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .card b { font-size: 14px; }
+
+.hud .icon-btn.mute { left: auto; right: calc(12px + var(--safe-r)); font-size: 20px; padding-bottom: 0; }
+.btn[aria-pressed="false"] { color: var(--muted); }
