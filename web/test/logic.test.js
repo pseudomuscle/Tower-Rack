@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { resolveDrop, speedFor, metersAt, reviveTitle, canRevive, axisFor, START } from '../src/logic.js';
+import { resolveDrop, speedFor, metersAt, reviveTitle, canRevive, axisFor, starsFor, advance, START, RANGE } from '../src/logic.js';
 
 const top = { x: 0, z: 0, w: 3, d: 3 };
 
@@ -64,4 +64,33 @@ test('meter dan revive', () => {
   assert.equal(canRevive(2, false), false);
   assert.equal(canRevive(3, false), true);
   assert.equal(canRevive(9, true), false);
+});
+
+test('tanpa pelebaran saat grow=false', () => {
+  const small = { x: 0, z: 0, w: 2, d: 3 };
+  const r = resolveDrop(small, { x: 0, z: 0, w: 2, d: 3 }, 'x', 5, 3, false);
+  assert.equal(r.block.w, 2);
+  assert.equal(r.grew, false);
+});
+
+test('bintang', () => {
+  assert.equal(starsFor(0, 20), 1);
+  assert.equal(starsFor(6, 20), 2);
+  assert.equal(starsFor(11, 20), 3);
+});
+
+test('pola gerak: periode sama, tetap di dalam jangkauan', () => {
+  for (const m of ['linear', 'ease', 'pulse']) {
+    let ph = 0, minP = Infinity, maxP = -Infinity;
+    for (let k = 0; k < 2000; k++) {
+      const r = advance(ph, 4, 1 / 60, m, k / 60); ph = r.phase;
+      minP = Math.min(minP, r.pos); maxP = Math.max(maxP, r.pos);
+    }
+    assert.ok(minP >= -RANGE - 1e-9 && maxP <= RANGE + 1e-9, m);
+    assert.ok(maxP - minP > RANGE * 1.9, m);
+  }
+  // linear: dari ujung ke ujung butuh 2*RANGE/speed detik
+  const half = (2 * RANGE) / 4;
+  const r = advance(0, 4, half, 'linear', 0);
+  assert.ok(Math.abs(r.pos - RANGE) < 1e-9);
 });

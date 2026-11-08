@@ -28,9 +28,11 @@
   <div class="dock" id="doneSheet" hidden>
     <div class="sheet" role="dialog" aria-labelledby="doneName">
       <p class="eyebrow">Menara selesai!</p>
+      <div class="stars big" id="doneStars" aria-label="Bintang"></div>
       <h2 id="doneName"></h2>
       <p class="meta" id="doneMeta"></p>
       <p class="badge" id="doneNew" hidden>★ Baru masuk Album Koleksi</p>
+      <p class="hint" id="doneHint"></p>
       <div class="fact"><b>Tahukah kamu?</b><span id="doneFact"></span></div>
       <div class="actions">
         <button class="btn primary" id="doneNext"></button>
@@ -59,14 +61,22 @@
   <!-- Menu utama -->
   <section class="screen" id="home">
     <header class="brand">
-      <h1>Menara Lapis</h1>
-      <p>Tumpuk lantai sampai menaranya selesai.</p>
+      <div>
+        <h1>Menara Lapis</h1>
+        <p>Tumpuk lantai sampai menaranya selesai.</p>
+      </div>
+      <div class="tally" id="starTally" aria-label="Total bintang"></div>
     </header>
-    <div class="levels" id="levelList"></div>
+    <button class="continue" id="btnContinue" type="button">
+      <span class="eyebrow" id="continueEyebrow">Lanjutkan</span>
+      <b id="continueName"></b>
+      <span id="continueMeta"></span>
+    </button>
     <div class="row">
       <button class="btn" id="btnAlbum">Album Koleksi <span id="albumCount"></span></button>
       <button class="btn" id="btnFree">Mode bebas</button>
     </div>
+    <div id="regionList" class="regions"></div>
     <details class="panel">
       <summary>Data iklan (uji)</summary>
       <div class="stats">
@@ -79,6 +89,27 @@
     <p class="note">Nama dan model bangunan dibuat sendiri, hanya terinspirasi bangunan nyata.</p>
   </section>
 
+  <!-- Detail level -->
+  <div class="modal" id="levelSheet" hidden>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="lvName">
+      <div class="lv-head">
+        <div class="lv-thumb" id="lvThumb"></div>
+        <div>
+          <p class="eyebrow" id="lvEyebrow"></p>
+          <h2 id="lvName"></h2>
+          <p class="sub" id="lvInsp"></p>
+        </div>
+      </div>
+      <div class="chips" id="lvChips"></div>
+      <div class="stars" id="lvStars"></div>
+      <p class="hint" id="lvHint"></p>
+      <div class="actions">
+        <button class="btn primary" id="lvPlay">Bangun</button>
+        <button class="btn ghost" id="lvClose">Tutup</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Album koleksi -->
   <section class="screen" id="album" hidden>
     <header class="topbar">
@@ -88,7 +119,7 @@
         <p id="albumSummary"></p>
       </div>
     </header>
-    <div class="album-grid" id="albumGrid"></div>
+    <div id="albumGrid"></div>
   </section>
 
   <!-- Detail album -->

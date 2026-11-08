@@ -64,7 +64,8 @@ Tiga level pertama yang direncanakan (nama samaran, model buatan sendiri):
    (Sudah ada: workflow **Web** untuk tes, build, dan deploy ke GitHub Pages.)
 
 ## Status
-- Versi web: Vite + Three.js 0.170 (dipaket lokal, tidak dari CDN, supaya nanti jalan offline di Capacitor).
-- Keseimbangan level (jumlah lantai, kecepatan) ada di `web/src/buildings.js`. Angka awal: 20 / 30 / 60 lantai,
-  kecepatan maks 5.5 / 7 / 9 unit per detik. Perlu diuji main langsung di HP.
+- Versi web: Vite + Three.js 0.170 (dipaket lokal supaya nanti jalan offline di Capacitor).
+- 60 level / 6 wilayah, kamera perspektif, bintang 1–3, album per wilayah.
+- Keseimbangan level ada di `web/src/levels.js` (kurva kecepatan dihitung dari urutan level; bisa ditimpa per level).
 - Iklan masih simulasi (`web/src/ads.js`); titik ganti ke AdMob ada di `playRewardedAd()`.
+- Versi Artifact (satu file) dibuat dengan `npm run build && npm run artifact`.
