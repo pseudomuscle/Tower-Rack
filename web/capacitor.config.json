@@ -1,0 +1,16 @@
+{
+  "appId": "io.github.pseudomuscle.menaralapis",
+  "appName": "Menara Lapis",
+  "webDir": "dist",
+  "backgroundColor": "#141a24",
+  "android": {
+    "backgroundColor": "#141a24"
+  },
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "native",
+      "initialViewportFitValueHint": "cover",
+      "style": "DARK"
+    }
+  }
+}

@@ -2,6 +2,7 @@
 // cukup ganti isi `playRewardedAd()` dengan pemanggilan plugin AdMob.
 import { store } from './storage.js';
 import { sfx, duckMusic } from './audio.js';
+import { isNative, showRewarded } from './native.js';
 
 const SK = 'adstats';
 const blank = { plays: 0, offered: 0, accepted: 0 };
@@ -25,6 +26,19 @@ function playRewardedAd() {
   });
 }
 
+/** Iklan AdMob asli di aplikasi Android. */
+async function playNativeAd() {
+  $('adActions').hidden = true;
+  $('adPlaying').hidden = false;
+  $('adCount').textContent = '…';
+  const ok = await showRewarded();
+  if (!ok) { // iklan belum tersedia (mis. tanpa internet) atau ditutup sebelum selesai
+    $('adText').textContent = 'Iklan tidak tersedia atau belum selesai ditonton.';
+    await new Promise((r) => setTimeout(r, 1400));
+  }
+  return ok;
+}
+
 /**
  * Tawarkan iklan hadiah. Selalu pilihan pemain, dengan tombol
  * "Tidak, terima kasih" yang jelas. Resolve true jika pemain menonton sampai selesai.
@@ -43,7 +57,7 @@ export function offerReward({ title, text, watchLabel = '▶ Tonton iklan & lanj
     const done = (ok) => { modal.hidden = true; $('adWatch').onclick = $('adSkip').onclick = null; resolve(ok); };
     $('adWatch').onclick = async () => {
       duckMusic(0.15, 4);
-      const ok = await playRewardedAd();
+      const ok = isNative ? await playNativeAd() : await playRewardedAd();
       if (ok) { track('accepted'); sfx.coin(); }
       done(ok);
     };

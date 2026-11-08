@@ -11,6 +11,7 @@ import { offerReward, track, resetAdStats, adOpen } from './ads.js';
 import { metersAt, reviveTitle, STAR_RULES } from './logic.js';
 import { renderHome, renderAlbum, renderAdStats, starRow } from './menu.js';
 import { sfx, setMusicMood, duckMusic, audioSettings, setMusic, setSfx, _tapOutput } from './audio.js';
+import { initAds, onBackButton } from './native.js';
 
 const $ = (id) => document.getElementById(id);
 const stage = $('stage');
@@ -209,6 +210,16 @@ try {
   $('regionList').innerHTML = '<p class="note">Mesin 3D tidak bisa dijalankan di perangkat ini (WebGL tidak tersedia).</p>';
 }
 show('home');
+initAds();
+
+// Tombol kembali Android: tutup lembar yang terbuka → kembali ke menu → keluar aplikasi.
+onBackButton(() => {
+  if (adOpen()) return true; // jangan ganggu saat iklan ditawarkan
+  for (const id of ['levelSheet', 'albumDetail']) if (!$(id).hidden) { $(id).hidden = true; return true; }
+  if (!$('home').hidden) return false;
+  show('home');
+  return true;
+});
 
 // Untuk uji otomatis/debug di konsol.
 window.__menara = { get game() { return game; }, play, show, BUILDINGS, audio: { sfx, setMusicMood, tap: _tapOutput } };
