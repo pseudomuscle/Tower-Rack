@@ -8,8 +8,8 @@ import { Game } from './game.js';
 import { BUILDINGS, FREE_MODE, nextBuilding, skyCss } from './buildings.js';
 import { getProgress, recordAttempt, recordResult, saveSnapshot } from './progress.js';
 import { offerReward, track, resetAdStats, adOpen } from './ads.js';
-import { metersAt, reviveTitle } from './logic.js';
-import { renderHome, renderAlbum, renderAdStats } from './menu.js';
+import { metersAt, reviveTitle, STAR_RULES } from './logic.js';
+import { renderHome, renderAlbum, renderAdStats, starRow } from './menu.js';
 
 const $ = (id) => document.getElementById(id);
 const stage = $('stage');
@@ -68,7 +68,7 @@ function play(b) {
   game.load(b);
   hud(game.info());
   if (b.free) cover('Mode Bebas', 'Ketuk untuk mulai. Tumpuk setinggi mungkin.');
-  else cover(b.name, `Ketuk untuk mulai. Target ${b.floors} lantai (${b.heightM} m).`);
+  else cover(`${b.number}. ${b.name}`, `Ketuk untuk mulai. Target ${b.floors} lantai (${b.heightM} m).${b.motion === 'ease' ? ' Lantai bergerak seperti bandul.' : b.motion === 'pulse' ? ' Kecepatan lantai naik-turun.' : ''}`);
   show('play');
 }
 
@@ -112,7 +112,7 @@ const hooks = {
       $('failTitle').textContent = `Berhenti di lantai ${info.floors}`;
       $('failMeta').textContent = `${info.meters} m dari ${b.heightM} m · tersisa ${b.floors - info.floors} lantai · rekor ${best}`;
       $('failRetry').textContent = 'Coba lagi';
-      $('failMenu').textContent = 'Pilih bangunan';
+      $('failMenu').textContent = 'Menu';
     }
     $('failSheet').hidden = false;
     $('failRetry').focus();
@@ -121,7 +121,11 @@ const hooks = {
     const b = info.building;
     setHudCompact(true);
     track('plays');
-    const { firstClear } = recordResult(b.id, { floors: info.floors, completed: true, perfects: info.perfects });
+    const { firstClear, newStars } = recordResult(b.id, { floors: info.floors, completed: true, perfects: info.perfects, stars: info.stars });
+    starRow($('doneStars'), info.stars);
+    $('doneHint').textContent = info.stars < 3
+      ? `Dapatkan ${Math.ceil(STAR_RULES[info.stars === 1 ? 0 : 1] * b.floors)}× pas sempurna untuk bintang ${info.stars + 1}.`
+      : newStars ? 'Bintang penuh!' : '';
     $('doneName').textContent = b.name;
     $('doneMeta').textContent = `${metersAt(b.floors, b)} m · ${b.floors} lantai · ${info.perfects}× pas sempurna`;
     $('doneNew').hidden = !firstClear;
@@ -172,7 +176,7 @@ let game = null;
 try {
   game = new Game(stage, hooks);
 } catch (err) {
-  $('levelList').innerHTML = '<p class="note">Mesin 3D tidak bisa dijalankan di perangkat ini (WebGL tidak tersedia).</p>';
+  $('regionList').innerHTML = '<p class="note">Mesin 3D tidak bisa dijalankan di perangkat ini (WebGL tidak tersedia).</p>';
 }
 show('home');
 

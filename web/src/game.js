@@ -1,14 +1,19 @@
 // Mesin permainan 3D: scene, tumpukan, kamera, dan alur status.
 // UI tidak diurus di sini; semua kejadian dikirim lewat `hooks`.
 import * as THREE from 'three';
-import { H, START, RANGE, axisFor, speedFor, resolveDrop, metersAt, canRevive } from './logic.js';
+import { H, START, RANGE, axisFor, speedFor, resolveDrop, metersAt, canRevive, advance, starsFor } from './logic.js';
 import { createLook, disposeObject } from './textures.js';
 import { buildCrown } from './crowns.js';
-import { buildScenery, makeEnvironment } from './scenery.js';
+import { buildScenery, makeEnvironment, buildSky } from './scenery.js';
 
-const D = 6.2;                 // setengah tinggi pandangan kamera ortografis
-const ORBIT_R = 8 * Math.SQRT2;
-const COS_E = 0.8165;          // cos sudut elevasi kamera isometrik (≈35°)
+// Kamera perspektif seperti foto: lensa 50°, sedikit menunduk, sehingga
+// cakrawala dan langit terlihat di bagian atas layar.
+const FOV = 50;
+const TAN = Math.tan((FOV / 2) * Math.PI / 180);
+const PITCH = 15 * Math.PI / 180;
+const COS_P = Math.cos(PITCH), SIN_P = Math.sin(PITCH);
+const VIEW_HALF = 6.4;             // setengah tinggi pandangan saat bermain (unit dunia)
+const PLAY_DIST = VIEW_HALF / TAN;
 
 const easeOutBack = (k) => 1 + 2.2 * Math.pow(k - 1, 3) + 1.2 * Math.pow(k - 1, 2);
 const buzz = (ms) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) { /* abaikan */ } };
@@ -30,7 +35,8 @@ export class Game {
     stage.prepend(r.domElement);
 
     const scene = (this.scene = new THREE.Scene());
-    this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, -100, 300);
+    this.camera = new THREE.PerspectiveCamera(FOV, 1, 0.1, 2500);
+    scene.fog = new THREE.Fog(0xffffff, 40, 300);
     this.hemi = new THREE.HemisphereLight(0xdfefff, 0x6b6b60, 0.6);
     scene.add(this.hemi);
     const sun = (this.sun = new THREE.DirectionalLight(0xfff1dd, 3));
@@ -51,7 +57,7 @@ export class Game {
     this.stack = []; this.falling = []; this.fx = [];
     this.cur = null; this.crown = null;
     this.state = 'idle'; this.active = false;
-    this.camY = 0; this.lookY = 0; this.zoom = 1; this.angle = Math.PI / 4;
+    this.camY = 0; this.lookY = 0; this.dist = PLAY_DIST; this.angle = Math.PI / 4;
 
     this.loop = this.loop.bind(this);
     new ResizeObserver(() => this.resize()).observe(stage);
@@ -68,6 +74,7 @@ export class Game {
       target: b.floors,
       meters: metersAt(this.score, b),
       perfects: this.perfects,
+      stars: starsFor(this.perfects, this.score),
       streak: this.streak,
       revived: this.revived,
       canRevive: canRevive(this.score, this.revived),
@@ -79,8 +86,7 @@ export class Game {
     const w = this.stage.clientWidth, h = this.stage.clientHeight;
     if (!w || !h) return;
     this.renderer.setSize(w, h, false);
-    const a = w / h;
-    Object.assign(this.camera, { left: -D * a, right: D * a, top: D, bottom: -D });
+    this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
   }
 
@@ -97,12 +103,18 @@ export class Game {
     disposeObject(this.env); this.env.clear();
     if (this.look) this.look.dispose();
     if (this.envRT) this.envRT.dispose();
+    if (this.sky) { this.scene.remove(this.sky); disposeObject(this.sky); }
     this.b = b;
     this.look = createLook(b);
     this.env.add(buildScenery(b));
     this.envRT = makeEnvironment(this.renderer, b);
+    this.sky = buildSky(b);
+    this.scene.add(this.sky);
+    this.scene.fog.color.set(b.sky[2]);
     this.scene.environment = this.envRT.texture;
-    this.scene.environmentIntensity = 0.75;
+    this.scene.environmentIntensity = b.env ?? 0.75;
+    this.hemi.intensity = b.hemi ?? 0.6;
+    this.renderer.toneMappingExposure = b.exposure ?? 1;
     this.sun.color.set(b.sun.color);
     this.sun.intensity = b.sun.intensity;
     this.sunDir.set(...b.sun.dir).normalize();
@@ -111,7 +123,7 @@ export class Game {
     this.reset();
     this.state = 'ready';
     this.camY = this.stack.length * H; this.lookY = this.camY + 0.6;
-    this.zoom = 1; this.angle = Math.PI / 4;
+    this.dist = PLAY_DIST; this.angle = Math.PI / 4;
   }
 
   clearTower() {
@@ -127,7 +139,8 @@ export class Game {
     this.clearTower();
     this.streak = 0; this.perfects = 0; this.revived = false;
     this.snapAt = null; this.completeT = 0;
-    const base = { x: 0, z: 0, w: START, d: START };
+    const st = this.b.start || START;
+    const base = { x: 0, z: 0, w: st, d: st };
     base.mesh = this.box(base, 0);
     this.stack.push(base);
   }
@@ -171,12 +184,13 @@ export class Game {
     c[this.axis] = -RANGE;
     c.mesh = this.box(c, i);
     c.speed = speedFor(i, this.b.speed);
+    c.phase = 0;
     this.cur = c;
   }
 
   drop() {
     const top = this.stack[this.stack.length - 1], i = this.stack.length, cur = this.cur;
-    const r = resolveDrop(top, cur, this.axis, this.streak);
+    const r = resolveDrop(top, cur, this.axis, this.streak, this.b.start || START, this.b.grow !== false);
     if (r.result === 'miss') {
       this.falling.push({ mesh: cur.mesh, vy: 0, spin: (Math.random() - 0.5) * 0.08 });
       this.cur = null; this.streak = 0;
@@ -230,7 +244,7 @@ export class Game {
     this.state = 'complete';
     this.completeT = 0;
     const i = this.stack.length - 1;
-    this.crown = buildCrown(this.b.crown, this.stack[i], i, this.look);
+    this.crown = buildCrown(this.b.crown, this.stack[i], i, this.look, this.b.crownOpts);
     this.crown.scale.setScalar(0.001);
     this.crownT = 0;
     this.tower.add(this.crown);
@@ -248,13 +262,23 @@ export class Game {
     const crownH = this.crown ? this.crown.userData.height * this.crown.scale.y : 0;
     const top = (this.stack.length - 1) * H + H / 2 + crownH;
     const bottom = -H / 2 - 0.5;
-    const ext = (top - bottom) * COS_E + 3.2;
-    const tz = Math.min(1.15, (2 * D * frac) / ext);
-    this.zoom += (tz - this.zoom) * Math.min(1, dt * 2.5);
-    const visibleH = (2 * D) / this.zoom;
+    const ext = (top - bottom) * COS_P + 4.5 * SIN_P + 1.2;
+    const td = Math.max(PLAY_DIST * 0.85, ext / (frac * 2 * TAN));
+    const k = Math.min(1, dt * 2.5);
+    this.dist += (td - this.dist) * k;
+    const visibleH = 2 * this.dist * TAN;
     const above = (0.5 - (fromTop + toTop) / 2) * visibleH; // pusat menara di atas tengah layar
-    const ly = (top + bottom) / 2 - above / COS_E;
-    this.lookY += (ly - this.lookY) * Math.min(1, dt * 2.5);
+    const ly = (top + bottom) / 2 - above / COS_P;
+    this.lookY += (ly - this.lookY) * k;
+  }
+
+  placeCamera() {
+    const cam = this.camera, d = this.dist;
+    cam.position.set(Math.cos(this.angle) * COS_P * d, this.lookY + SIN_P * d, Math.sin(this.angle) * COS_P * d);
+    cam.lookAt(0, this.lookY, 0);
+    const f = this.scene.fog;
+    f.near = d + 18; f.far = d + 260;
+    if (this.sky) this.sky.position.copy(cam.position);
   }
 
   loop(now) {
@@ -265,16 +289,15 @@ export class Game {
 
     const c = this.cur;
     if (this.state === 'play' && c) {
-      c[this.axis] += c.speed * this.dir * dt;
-      if (c[this.axis] > RANGE) { c[this.axis] = RANGE; this.dir = -1; }
-      if (c[this.axis] < -RANGE) { c[this.axis] = -RANGE; this.dir = 1; }
-      c.mesh.position[this.axis] = c[this.axis];
+      const m = advance(c.phase, c.speed, dt, this.b.motion || 'linear', t);
+      c.phase = m.phase; c[this.axis] = m.pos;
+      c.mesh.position[this.axis] = m.pos;
     }
     this.falling = this.falling.filter((f) => {
       f.vy -= 18 * dt;
       f.mesh.position.y += f.vy * dt;
       f.mesh.rotation.x += f.spin; f.mesh.rotation.z += f.spin;
-      if (f.mesh.position.y < this.camY - 30) { this.kill(f.mesh); return false; }
+      if (f.mesh.position.y < -3) { this.kill(f.mesh); return false; }
       return true;
     });
     this.fx = this.fx.filter((f) => {
@@ -302,16 +325,13 @@ export class Game {
     } else if (this.state === 'failed') {
       this.frameWhole(0.1, 0.64, dt);
     } else {
-      this.zoom += (1 - this.zoom) * Math.min(1, dt * 3);
+      this.dist += (PLAY_DIST - this.dist) * Math.min(1, dt * 3);
       this.lookY += (this.camY + 0.6 - this.lookY) * Math.min(1, dt * 4);
       this.angle += (Math.PI / 4 - this.angle) * Math.min(1, dt * 3);
     }
     this.updateShadow();
-    const cam = this.camera;
-    if (Math.abs(cam.zoom - this.zoom) > 1e-4) { cam.zoom = this.zoom; cam.updateProjectionMatrix(); }
-    cam.position.set(Math.cos(this.angle) * ORBIT_R, this.lookY + 8, Math.sin(this.angle) * ORBIT_R);
-    cam.lookAt(0, this.lookY, 0);
-    this.renderer.render(this.scene, cam);
+    this.placeCamera();
+    this.renderer.render(this.scene, this.camera);
 
     if (this.snapAt != null && this.state === 'complete' && this.completeT >= this.snapAt) {
       this.snapAt = null;
@@ -331,9 +351,7 @@ export class Game {
     this.tower.rotation.z = -(this.b.lean || 0);
     this.angle = Math.PI / 4 + 0.5;
     this.frameWhole(0.04, 0.5, 1);
-    this.camera.zoom = this.zoom; this.camera.updateProjectionMatrix();
-    this.camera.position.set(Math.cos(this.angle) * ORBIT_R, this.lookY + 8, Math.sin(this.angle) * ORBIT_R);
-    this.camera.lookAt(0, this.lookY, 0);
+    this.placeCamera();
     this.updateShadow();
     this.renderer.render(this.scene, this.camera);
     try { this.hooks.onSnapshot?.(this.capture(), this.b); } catch (e) { /* snapshot opsional */ }
@@ -361,13 +379,9 @@ export class Game {
     const W = src.width, Hh = src.height;
     const ch = Math.round(Hh * 0.54), cw = Math.min(W, Math.round(ch * 0.75));
     const out = document.createElement('canvas');
-    out.width = 300; out.height = 400;
+    out.width = 240; out.height = 320;
     const g = out.getContext('2d');
-    const sky = g.createLinearGradient(0, 0, 0, 400);
-    const s = this.b.sky;
-    sky.addColorStop(0, s[0]); sky.addColorStop(0.5, s[1]); sky.addColorStop(1, s[2]);
-    g.fillStyle = sky; g.fillRect(0, 0, 300, 400);
-    g.drawImage(src, (W - cw) / 2, 0, cw, ch, 0, 0, 300, 400);
-    return out.toDataURL('image/jpeg', 0.82);
+    g.drawImage(src, (W - cw) / 2, 0, cw, ch, 0, 0, 240, 320);
+    return out.toDataURL('image/jpeg', 0.75);
   }
 }
