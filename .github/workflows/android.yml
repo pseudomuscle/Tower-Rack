@@ -1,0 +1,103 @@
+# Build aplikasi Android di cloud (tanpa laptop).
+# - Setiap push / PR: tes + build APK uji (bisa langsung dipasang di HP).
+# - Jika secret kunci rilis tersedia: juga APK rilis & .aab bertanda tangan untuk Play Store.
+# - Push ke main: hasilnya dipasang di GitHub Release "android-latest" (link unduhan tetap).
+#
+# Secrets (Settings → Secrets and variables → Actions → Secrets):
+#   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
+# Variables (tab Variables, opsional):
+#   ADMOB_APP_ID  — ID aplikasi AdMob asli (ca-app-pub-...~...). Tanpa ini dipakai ID uji Google.
+name: Android
+
+on:
+  push:
+    branches: [main, 'claude/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      VERSION_CODE: ${{ github.run_number }}
+      ADMOB_APP_ID: ${{ vars.ADMOB_APP_ID }}
+      HAS_KEY: ${{ secrets.ANDROID_KEYSTORE_BASE64 != '' }}
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: gradle
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - run: npx cap sync android
+      - name: Nama versi
+        run: echo "VERSION_NAME=$(node -p "require('./package.json').version").${{ github.run_number }}" >> "$GITHUB_ENV"
+      - name: Siapkan kunci rilis
+        if: env.HAS_KEY == 'true'
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/release.keystore"
+          echo "ANDROID_KEYSTORE_PATH=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+      - name: Build APK uji
+        working-directory: web/android
+        run: ./gradlew --no-daemon assembleDebug
+      - name: Build APK rilis & AAB
+        if: env.HAS_KEY == 'true'
+        working-directory: web/android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon assembleRelease bundleRelease
+      - name: Kumpulkan hasil
+        run: |
+          mkdir -p out
+          cp android/app/build/outputs/apk/debug/app-debug.apk out/menara-lapis-uji.apk
+          if [ "$HAS_KEY" = "true" ]; then
+            cp android/app/build/outputs/apk/release/app-release.apk out/menara-lapis.apk
+            cp android/app/build/outputs/bundle/release/app-release.aab out/menara-lapis.aab
+          fi
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with:
+          name: menara-android
+          path: web/out
+          retention-days: 30
+
+  release:
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: menara-android
+          path: out
+      - name: Terbitkan ke GitHub Release "android-latest"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh release delete android-latest --cleanup-tag -y || true
+          gh release create android-latest out/* --target "${{ github.sha }}" --prerelease \
+            --title "Menara Lapis (Android) — build ${{ github.run_number }}" \
+            --notes "Build otomatis dari main (${{ github.sha }}). Pasang menara-lapis-uji.apk untuk mencoba di HP. File .aab untuk diunggah ke Play Console."

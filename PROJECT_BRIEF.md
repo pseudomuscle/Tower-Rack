@@ -68,4 +68,5 @@ Tiga level pertama yang direncanakan (nama samaran, model buatan sendiri):
 - 60 level / 6 wilayah, kamera perspektif, bintang 1–3, album per wilayah.
 - Keseimbangan level ada di `web/src/levels.js` (kurva kecepatan dihitung dari urutan level; bisa ditimpa per level).
 - Iklan masih simulasi (`web/src/ads.js`); titik ganti ke AdMob ada di `playRewardedAd()`.
+- Android: Capacitor 8 + AdMob (ID uji), workflow `android.yml` membuat APK uji dan AAB bertanda tangan (jika secret diisi), dirilis ke GitHub Release `android-latest`.
 - Versi Artifact (satu file) dibuat dengan `npm run build && npm run artifact`.

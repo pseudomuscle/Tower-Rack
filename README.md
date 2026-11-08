@@ -18,6 +18,21 @@ Semua build berjalan di **GitHub Actions** — tidak perlu laptop.
 Setiap push ke branch lain / pull request tetap menjalankan tes + build, dan hasilnya
 bisa diunduh dari halaman run di tab Actions (artifact `menara-web`).
 
+## Aplikasi Android
+
+Dibungkus dengan **Capacitor 8** (`web/android/`) dan dibangun oleh workflow **Android** di GitHub Actions.
+
+- **APK uji (pasang langsung di HP):** setelah merge ke `main`, buka
+  `https://github.com/pseudomuscle/Tower-Rack/releases/tag/android-latest` dan unduh `menara-lapis-uji.apk`.
+  Saat memasang, izinkan "Instal aplikasi tak dikenal" untuk browser. APK baru bisa dipasang menimpa yang lama.
+- **AAB untuk Play Store:** dibuat otomatis jika 4 secret kunci rilis sudah diisi
+  (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`).
+- **Iklan:** AdMob (`@capacitor-community/admob`) dengan **ID uji Google**. Untuk iklan asli:
+  isi variabel repo `ADMOB_APP_ID` (Settings → Secrets and variables → Actions → Variables)
+  dan ganti `REWARDED` + `TESTING` di `web/src/admob-config.js`.
+- ID aplikasi: `io.github.pseudomuscle.menaralapis` (tidak bisa diubah setelah diunggah ke Play Store).
+- Ikon, layar pembuka, dan grafis toko dibuat oleh `web/scripts/make-icons.py`; grafis toko ada di `web/store/`.
+
 ## Isi game sekarang
 
 - **60 level di 6 wilayah**: Nusantara, Asia, Eropa, Timur Tengah & Afrika, Amerika, Puncak Dunia.
