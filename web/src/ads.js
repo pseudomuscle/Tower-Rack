@@ -1,6 +1,7 @@
 // Iklan hadiah (rewarded). Sekarang SIMULASI. Saat Capacitor + AdMob dipasang,
 // cukup ganti isi `playRewardedAd()` dengan pemanggilan plugin AdMob.
 import { store } from './storage.js';
+import { sfx, duckMusic } from './audio.js';
 
 const SK = 'adstats';
 const blank = { plays: 0, offered: 0, accepted: 0 };
@@ -41,8 +42,9 @@ export function offerReward({ title, text, watchLabel = '▶ Tonton iklan & lanj
   return new Promise((resolve) => {
     const done = (ok) => { modal.hidden = true; $('adWatch').onclick = $('adSkip').onclick = null; resolve(ok); };
     $('adWatch').onclick = async () => {
+      duckMusic(0.15, 4);
       const ok = await playRewardedAd();
-      if (ok) track('accepted');
+      if (ok) { track('accepted'); sfx.coin(); }
       done(ok);
     };
     $('adSkip').onclick = () => done(false);

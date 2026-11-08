@@ -10,6 +10,7 @@ import { getProgress, recordAttempt, recordResult, saveSnapshot } from './progre
 import { offerReward, track, resetAdStats, adOpen } from './ads.js';
 import { metersAt, reviveTitle, STAR_RULES } from './logic.js';
 import { renderHome, renderAlbum, renderAdStats, starRow } from './menu.js';
+import { sfx, setMusicMood, duckMusic, audioSettings, setMusic, setSfx, _tapOutput } from './audio.js';
 
 const $ = (id) => document.getElementById(id);
 const stage = $('stage');
@@ -29,6 +30,7 @@ function show(name) {
   game && game.setActive(name === 'play');
   if (name === 'home') renderHome(play);
   if (name === 'album') renderAlbum(play);
+  if (name !== 'play') setMusicMood('menu');
 }
 
 /* ---------- HUD ---------- */
@@ -66,6 +68,7 @@ function play(b) {
   setHudCompact(false);
   stage.style.background = skyCss(b);
   game.load(b);
+  setMusicMood(b.free ? 'menu' : b.region);
   hud(game.info());
   if (b.free) cover('Mode Bebas', 'Ketuk untuk mulai. Tumpuk setinggi mungkin.');
   else cover(`${b.number}. ${b.name}`, `Ketuk untuk mulai. Target ${b.floors} lantai (${b.heightM} m).${b.motion === 'ease' ? ' Lantai bergerak seperti bandul.' : b.motion === 'pulse' ? ' Kecepatan lantai naik-turun.' : ''}`);
@@ -82,11 +85,17 @@ function retry() {
 /* ---------- Kejadian dari mesin game ---------- */
 const hooks = {
   onStart(info) {
+    sfx.start();
     $('cover').hidden = true;
     recordAttempt(info.building.id);
     hud(info);
   },
-  onFloor(info) { hud(info); showStreak(info); },
+  onFloor(info) {
+    hud(info); showStreak(info);
+    if (info.perfect) { sfx.perfect(info.streak); if (info.grew) sfx.grow(); } else sfx.cut();
+  },
+  onDropMiss() { sfx.miss(); },
+  onTopped() { duckMusic(0.25, 4); sfx.complete(); },
   onMiss(info) {
     const b = info.building;
     const title = reviveTitle({ floors: info.floors, target: info.target, best: bestAtStart });
@@ -98,6 +107,7 @@ const hooks = {
   onFail(info) {
     const b = info.building;
     setHudCompact(true);
+    duckMusic(0.3, 3); sfx.fail();
     track('plays');
     const { newBest } = recordResult(b.id, { floors: info.floors, completed: false, perfects: info.perfects });
     const best = getProgress(b.id).best;
@@ -123,6 +133,7 @@ const hooks = {
     track('plays');
     const { firstClear, newStars } = recordResult(b.id, { floors: info.floors, completed: true, perfects: info.perfects, stars: info.stars });
     starRow($('doneStars'), info.stars);
+    for (let k = 0; k < info.stars; k++) setTimeout(() => sfx.star(k), 120 + k * 150); // selaras animasi bintang
     $('doneHint').textContent = info.stars < 3
       ? `Dapatkan ${Math.ceil(STAR_RULES[info.stars === 1 ? 0 : 1] * b.floors)}× pas sempurna untuk bintang ${info.stars + 1}.`
       : newStars ? 'Bintang penuh!' : '';
@@ -158,6 +169,25 @@ $('doneAlbum').onclick = () => show('album');
 $('doneMenu').onclick = () => show('home');
 $('resetStats').onclick = () => { resetAdStats(); renderAdStats(); };
 
+/* ---------- Suara ---------- */
+function renderSound() {
+  const a = audioSettings();
+  $('btnMusic').textContent = a.music ? '♪ Musik: nyala' : '♪ Musik: mati';
+  $('btnSfx').textContent = a.sfx ? '🔊 Efek: nyala' : '🔈 Efek: mati';
+  $('btnMusic').setAttribute('aria-pressed', a.music);
+  $('btnSfx').setAttribute('aria-pressed', a.sfx);
+  const muted = !a.music && !a.sfx;
+  $('btnMute').textContent = muted ? '🔇' : '🔊';
+  $('btnMute').setAttribute('aria-label', muted ? 'Nyalakan suara' : 'Matikan suara');
+}
+$('btnMusic').onclick = () => { setMusic(!audioSettings().music); renderSound(); };
+$('btnSfx').onclick = () => { setSfx(!audioSettings().sfx); renderSound(); };
+$('btnMute').addEventListener('pointerdown', (e) => e.stopPropagation());
+$('btnMute').onclick = () => { const a = audioSettings(); const on = !a.music && !a.sfx; setMusic(on); setSfx(on); renderSound(); };
+renderSound();
+// bunyi klik untuk tombol menu (bukan ketukan permainan)
+document.addEventListener('click', (e) => { if (e.target.closest('.btn, .tile, .continue, .card, .icon-btn')) sfx.click(); });
+
 stage.addEventListener('pointerdown', (e) => {
   if (adOpen() || $('hud').hidden) return;
   if (e.target.closest('button')) return;
@@ -181,4 +211,4 @@ try {
 show('home');
 
 // Untuk uji otomatis/debug di konsol.
-window.__menara = { get game() { return game; }, play, show, BUILDINGS };
+window.__menara = { get game() { return game; }, play, show, BUILDINGS, audio: { sfx, setMusicMood, tap: _tapOutput } };

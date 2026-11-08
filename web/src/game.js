@@ -195,6 +195,7 @@ export class Game {
       this.falling.push({ mesh: cur.mesh, vy: 0, spin: (Math.random() - 0.5) * 0.08 });
       this.cur = null; this.streak = 0;
       buzz(60);
+      this.hooks.onDropMiss?.();
       return this.missed();
     }
     this.streak = r.streak;
@@ -249,6 +250,7 @@ export class Game {
     this.crownT = 0;
     this.tower.add(this.crown);
     buzz([20, 60, 30]);
+    this.hooks.onTopped?.(this.info());
     this.snapAt = 2.2;
     setTimeout(() => { if (this.state === 'complete') this.hooks.onComplete?.(this.info()); }, 1100);
   }
