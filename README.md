@@ -27,9 +27,9 @@ Dibungkus dengan **Capacitor 8** (`web/android/`) dan dibangun oleh workflow **A
   Saat memasang, izinkan "Instal aplikasi tak dikenal" untuk browser. APK baru bisa dipasang menimpa yang lama.
 - **AAB untuk Play Store:** dibuat otomatis jika 4 secret kunci rilis sudah diisi
   (`ANDROID_KEYSTORE_BASE64`, `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD`).
-- **Iklan:** AdMob (`@capacitor-community/admob`) dengan **ID uji Google**. Untuk iklan asli:
-  isi variabel repo `ADMOB_APP_ID` (Settings → Secrets and variables → Actions → Variables)
-  dan ganti `REWARDED` + `TESTING` di `web/src/admob-config.js`.
+- **Iklan:** AdMob (`@capacitor-community/admob`). ID aplikasi dan unit Rewarded Menara Lapis sudah
+  terpasang, tetapi `TESTING: true` di `web/src/admob-config.js` membuat yang tampil tetap **iklan uji**.
+  Ubah ke `false` hanya tepat sebelum rilis produksi.
 - ID aplikasi: `io.github.pseudomuscle.menaralapis` (tidak bisa diubah setelah diunggah ke Play Store).
 - Ikon, layar pembuka, dan grafis toko dibuat oleh `web/scripts/make-icons.py`; grafis toko ada di `web/store/`.
 

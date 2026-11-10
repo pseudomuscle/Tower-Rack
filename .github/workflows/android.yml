@@ -6,7 +6,7 @@
 # Secrets (Settings → Secrets and variables → Actions → Secrets):
 #   ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS, ANDROID_KEY_PASSWORD
 # Variables (tab Variables, opsional):
-#   ADMOB_APP_ID  — ID aplikasi AdMob asli (ca-app-pub-...~...). Tanpa ini dipakai ID uji Google.
+#   ADMOB_APP_ID  — menimpa ID aplikasi AdMob (bawaan: ID Menara Lapis di build.gradle).
 name: Android
 
 on:
