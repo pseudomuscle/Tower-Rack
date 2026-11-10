@@ -12,7 +12,7 @@ Menara Lapis: Tumpuk Gedung
 Tumpuk lantai, bangun 60 menara terkenal dunia dengan satu jari!
 ```
 
-## Deskripsi lengkap (1768/4000)
+## Deskripsi lengkap (1830/4000)
 ```
 Ketuk tepat waktu, tumpuk lantai demi lantai, dan selesaikan menara-menara ikonik dari seluruh dunia!
 
@@ -37,6 +37,7 @@ Kecepatan naik bertahap dan sama untuk semua pemain. Ada pola gerak bandul dan b
 ✔ Tanpa login, tanpa akun — langsung main
 ✔ Bisa dimainkan offline
 ✔ Iklan hanya muncul kalau kamu memilih menonton untuk melanjutkan
+✔ Opsi "Hapus iklan" sekali beli: revive langsung tanpa iklan
 ✔ Mode Bebas untuk menumpuk setinggi-tingginya
 
 Nama dan model bangunan dibuat sendiri dan hanya terinspirasi bangunan nyata.

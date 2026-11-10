@@ -3,6 +3,7 @@
 import { store } from './storage.js';
 import { sfx, duckMusic } from './audio.js';
 import { isNative, showRewarded } from './native.js';
+import { isPremium, premiumAvailable, buyPremium } from './premium.js';
 
 const SK = 'adstats';
 const blank = { plays: 0, offered: 0, accepted: 0 };
@@ -45,6 +46,9 @@ async function playNativeAd() {
  */
 export function offerReward({ title, text, watchLabel = '▶ Tonton iklan & lanjut' }) {
   track('offered');
+  const premium = isPremium();
+  if (premium) { watchLabel = '★ Lanjut (Premium, tanpa iklan)'; text = text.replace(' Tonton iklan untuk mengulang lantai terakhir.', ' Ulangi lantai terakhir.'); }
+  $('adUpsell').hidden = premium || !premiumAvailable();
   const modal = $('adModal');
   $('adTitle').textContent = title;
   $('adText').textContent = text;
@@ -54,8 +58,14 @@ export function offerReward({ title, text, watchLabel = '▶ Tonton iklan & lanj
   modal.hidden = false;
   $('adWatch').focus();
   return new Promise((resolve) => {
-    const done = (ok) => { modal.hidden = true; $('adWatch').onclick = $('adSkip').onclick = null; resolve(ok); };
+    const done = (ok) => { modal.hidden = true; $('adWatch').onclick = $('adSkip').onclick = $('adUpsell').onclick = null; resolve(ok); };
+    $('adUpsell').onclick = async () => {
+      const r = await buyPremium();
+      if (r === 'ok') { sfx.coin(); done(true); }
+      else if (r === 'pending') $('adText').textContent = 'Pembayaran sedang diproses. Premium aktif otomatis setelah pembayaran selesai.';
+    };
     $('adWatch').onclick = async () => {
+      if (isPremium()) { track('accepted'); sfx.coin(); done(true); return; }
       duckMusic(0.15, 4);
       const ok = isNative ? await playNativeAd() : await playRewardedAd();
       if (ok) { track('accepted'); sfx.coin(); }

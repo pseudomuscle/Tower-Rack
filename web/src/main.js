@@ -12,6 +12,8 @@ import { metersAt, reviveTitle, STAR_RULES } from './logic.js';
 import { renderHome, renderAlbum, renderAdStats, starRow } from './menu.js';
 import { sfx, setMusicMood, duckMusic, audioSettings, setMusic, setSfx, _tapOutput } from './audio.js';
 import { initAds, onBackButton } from './native.js';
+import { graphicsSetting, setGraphics, effectiveQuality } from './quality.js';
+import { initPremium, isPremium, premiumAvailable, premiumPrice, buyPremium, restorePremium, onPremiumChange } from './premium.js';
 
 const $ = (id) => document.getElementById(id);
 const stage = $('stage');
@@ -196,6 +198,15 @@ $('btnSfx').onclick = () => { setSfx(!audioSettings().sfx); renderSound(); };
 $('btnMute').addEventListener('pointerdown', (e) => e.stopPropagation());
 $('btnMute').onclick = () => { const a = audioSettings(); const on = !a.music && !a.sfx; setMusic(on); setSfx(on); renderSound(); };
 renderSound();
+
+/* ---------- Grafis ---------- */
+const GFX_NEXT = { auto: 'high', high: 'low', low: 'auto' };
+function renderGraphics() {
+  const s = graphicsSetting(), eff = effectiveQuality() === 'low' ? 'Hemat' : 'Tinggi';
+  $('btnGraphics').textContent = s === 'auto' ? `🖼 Grafis: Otomatis (${eff})` : `🖼 Grafis: ${eff}`;
+}
+$('btnGraphics').onclick = () => { setGraphics(GFX_NEXT[graphicsSetting()]); renderGraphics(); };
+renderGraphics();
 // bunyi klik untuk tombol menu (bukan ketukan permainan)
 document.addEventListener('click', (e) => { if (e.target.closest('.btn, .tile, .continue, .card, .icon-btn')) sfx.click(); });
 
@@ -221,6 +232,34 @@ try {
 }
 show('home');
 initAds();
+
+/* ---------- Premium "Hapus iklan" (hanya di aplikasi Android) ---------- */
+function renderPremium(note) {
+  const box = $('premiumBox');
+  box.hidden = !premiumAvailable();
+  if (box.hidden) return;
+  const owned = isPremium();
+  box.classList.toggle('owned', owned);
+  $('premiumTitle').textContent = owned ? '★ Premium aktif' : 'Hapus iklan';
+  $('premiumText').textContent = note || (owned ? 'Terima kasih! Revive sekarang langsung, tanpa iklan.' : 'Sekali beli: revive langsung tanpa menonton iklan, selamanya.');
+  $('btnPremium').hidden = owned;
+  $('btnRestore').hidden = owned;
+  $('btnPremium').textContent = premiumPrice() ? `Beli ${premiumPrice()}` : 'Beli';
+}
+$('btnPremium').onclick = async () => {
+  $('btnPremium').disabled = true;
+  const r = await buyPremium();
+  $('btnPremium').disabled = false;
+  if (r === 'ok') sfx.coin();
+  renderPremium(r === 'pending' ? 'Pembayaran sedang diproses. Premium aktif otomatis setelah selesai.'
+    : r === 'error' ? 'Pembelian belum berhasil. Coba lagi nanti.' : undefined);
+};
+$('btnRestore').onclick = async () => {
+  const owned = await restorePremium();
+  renderPremium(owned ? undefined : 'Belum ada pembelian Premium di akun Google Play ini.');
+};
+onPremiumChange(() => renderPremium());
+initPremium().then(() => renderPremium());
 
 // Tombol kembali Android: tutup lembar yang terbuka → kembali ke menu → keluar aplikasi.
 onBackButton(() => {

@@ -73,7 +73,7 @@ export function starsFor(perfects, floors) {
 
 /**
  * Posisi lantai bergerak. Pola `linear` (kecepatan tetap), `ease` (seperti
- * bandul: cepat di tengah, melambat di ujung), atau `pulse` (kecepatan naik
+ * bandul: sedikit lebih cepat di tengah, melambat di ujung), atau `pulse` (kecepatan naik
  * turun berirama). Ketiganya punya periode yang sama, jadi tetap adil.
  * Mengembalikan {pos, phase}; `phase` ∈ [0, 2) menyatakan posisi dalam satu siklus.
  */
@@ -83,6 +83,7 @@ export function advance(phase, speed, dt, motion, t) {
   if (motion === 'pulse') rate *= 1 + 0.35 * Math.sin(t * 2.2);
   phase = (phase + rate * dt) % 2;
   const tri = phase < 1 ? phase : 2 - phase; // 0→1→0
-  const k = motion === 'ease' ? (1 - Math.cos(tri * Math.PI)) / 2 : tri;
+  // bandul: campuran gerak tetap & ayunan → paling cepat 1,29× di tengah, melambat di ujung
+  const k = motion === 'ease' ? 0.5 * tri + 0.25 * (1 - Math.cos(tri * Math.PI)) : tri;
   return { pos: -RANGE + 2 * RANGE * k, phase };
 }

@@ -54,6 +54,10 @@ Dibungkus dengan **Capacitor 8** (`web/android/`) dan dibangun oleh workflow **A
 - **Musik & efek suara** disintesis langsung dengan Web Audio (tanpa file suara luar): musik berbeda
   tiap wilayah, bunyi lantai mendarat, terpotong, pas sempurna (nada naik), melebar, meleset, gagal,
   fanfare menara selesai, bintang, dan koin hadiah. Bisa dimatikan terpisah (musik / efek).
+- **Kesulitan disetel dengan simulasi pemain** (`npm run difficulty`, `npm run tune`): peluang selesai
+  pemain rata-rata turun mulus dari ±100% (level 1) ke ±10% (level 60), tanpa lonjakan.
+- **Premium "Hapus iklan"** (Android, Google Play Billing, produk `hapus_iklan`): revive tanpa iklan selamanya.
+- **Grafis: Otomatis / Tinggi / Hemat**; Otomatis turun ke Hemat di HP lemah atau bila FPS rendah.
 - **Mode bebas**: gameplay prototipe asli.
 - Revive via iklan hadiah **simulasi** (sekali per permainan, mulai lantai 3, selalu ada tombol
   "Tidak, terima kasih").
@@ -77,6 +81,9 @@ web/
     progress.js       simpan progres, kunci level, foto album
     ads.js            iklan hadiah (sekarang simulasi; nanti diganti AdMob)
     audio.js          musik per wilayah & efek suara (Web Audio, disintesis)
+    premium.js        pembelian "Hapus iklan" (Google Play Billing)
+    quality.js        pengaturan grafis Tinggi/Hemat
+    tuning.js         kecepatan tiap level hasil penyetelan otomatis (dibuat oleh scripts/tune-difficulty.mjs)
     storage.js        localStorage yang aman
     style.css
   test/logic.test.js  tes aturan inti (node --test)

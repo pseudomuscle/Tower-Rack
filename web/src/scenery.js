@@ -23,8 +23,8 @@ function canvasTex(size, draw, srgb = true) {
 }
 
 /* ---------- Tanah ---------- */
-function groundTexture(kind, seed, snow) {
-  return canvasTex(2048, (g, S) => {
+function groundTexture(kind, seed, snow, size = 2048) {
+  return canvasTex(size, (g, S) => {
     const r = rng(seed), k = S / (2 * GROUND_R);
     const P = (w) => (w + GROUND_R) * k;
     const noise = (n, rgb, a, sz) => { for (let i = 0; i < n; i++) { g.fillStyle = `rgba(${rgb},${a * r()})`; g.fillRect(r() * S, r() * S, sz, sz); } };
@@ -310,9 +310,9 @@ function lanterns(spots) {
 }
 
 /** Kota/permukiman jauh yang memudar ke cakrawala, memberi rasa ketinggian. */
-function farRing(r, kind, glow, harbor) {
+function farRing(r, kind, glow, harbor, count = 280) {
   const spots = [];
-  for (let k = 0; k < 280; k++) {
+  for (let k = 0; k < count; k++) {
     const a = r() * Math.PI * 2, d = 17 + Math.pow(r(), 0.7) * 80;
     const x = Math.cos(a) * d, z = Math.sin(a) * d;
     if (harbor && x > SHORE - 1) continue;
@@ -330,7 +330,7 @@ function farRing(r, kind, glow, harbor) {
  * Bangun lingkungan untuk satu bangunan. Puncak alas berada di y = -H/2,
  * tepat di bawah lantai dasar.
  */
-export function buildScenery(b) {
+export function buildScenery(b, q = { farCount: 280, groundTex: 2048 }) {
   const root = new THREE.Group();
   if (b.style === 'cake') {
     const plate = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.3, 0.22, 48), std('#fdfaf3', { roughness: 0.4 }));
@@ -345,7 +345,7 @@ export function buildScenery(b) {
   const glow = b.cityGlow || 0;
   const harbor = kind === 'harbor';
 
-  const tex = groundTexture(kind, b.id.length * 31 + (b.index || 0), b.snow);
+  const tex = groundTexture(kind, b.id.length * 31 + (b.index || 0), b.snow, q.groundTex);
   const alpha = groundAlpha();
   const ground = new THREE.Mesh(new THREE.CircleGeometry(GROUND_R, 96), std('#ffffff', { map: tex, alphaMap: alpha, transparent: true, roughness: 0.95 }));
   ground.material.userData.ownTextures = [tex, alpha];
@@ -395,7 +395,7 @@ export function buildScenery(b) {
     add(cityBlocks(r, scatter(r, 70, 6.2, 15, (x) => x > SHORE - 1.2), ['#e8dfd0', '#d9d4ca', '#c2ccd2', '#e6c9a8', '#f2efe8'], { minH: 0.4, maxH: 2.6, kind: b.trees === 'palm' ? 'office' : 'house', roof: b.houseRoofs ? ['#b5552f', '#7d4a3a', '#5d6670'] : null, glow }));
     add(trees(scatter(r, 20, 5, 9, (x) => x > SHORE - 0.8), r, { kind: treeKind || 'round', scale: 0.8 }));
   }
-  add(farRing(r, kind, glow, harbor));
+  add(farRing(r, kind, glow, harbor, q.farCount));
   return root;
 }
 

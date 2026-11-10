@@ -25,6 +25,8 @@ export const REGIONS = [
   { id: 'dunia', name: 'Puncak Dunia', blurb: 'Gedung-gedung tertinggi dan paling berani di dunia.' }
 ];
 
+import { TUNED_SPEED } from './tuning.js';
+
 // Singkatan fasad
 const glass = (o = {}) => ({ style: 'glass', ...o });
 const F = (style, o = {}) => ({ style, ...o });
@@ -229,15 +231,20 @@ const RAW = [
 const DIFF = ['Mudah', 'Sedang', 'Sulit', 'Ekstrem'];
 function curve(i, n) {
   const t = n > 1 ? i / (n - 1) : 0;
-  return {
+  const out = {
     speed: { base: +(2.5 + t * 1.1).toFixed(2), inc: +(0.07 + t * 0.09).toFixed(3), max: +(5.2 + t * 4.2).toFixed(2) },
     // pola gerak bergantian supaya tiap level terasa berbeda (tetap adil & sama untuk semua)
     motion: i >= 12 && i % 4 === 3 ? 'ease' : i >= 28 && i % 5 === 4 ? 'pulse' : 'linear',
     start: i >= 20 && i % 7 === 5 ? 2.6 : 3,
     grow: !(i >= 40 && i % 3 === 2)
   };
+  // Jangan menumpuk mekanik sulit di satu level: level bandul selalu berlantai
+  // normal dan boleh melebar.
+  if (out.motion === 'ease') { out.start = 3; out.grow = true; }
+  return out;
 }
-const diffLabel = (sp) => DIFF[sp.max < 6.2 ? 0 : sp.max < 7.6 ? 1 : sp.max < 8.8 ? 2 : 3];
+// Label mengikuti urutan level (kecepatan sudah disetel agar kesulitan naik mulus, lihat tuning.js).
+const diffLabel = (i) => DIFF[i < 15 ? 0 : i < 35 ? 1 : i < 50 ? 2 : 3];
 
 export const LEVELS = RAW.map(([region, id, name, inspiration, fact, o], index) => {
   const time = TIMES[o.time] || TIMES.day;
@@ -247,13 +254,13 @@ export const LEVELS = RAW.map(([region, id, name, inspiration, fact, o], index) 
     style: o.facade.style, facade: o.facade, round: !!o.round, ledge: o.ledge, ledgeColor: o.ledgeColor, roofColor: o.roofColor,
     crown: o.crown, crownOpts: o.crownOpts || {}, plinth: o.plinth, scenery: o.scenery, trees: o.trees, houseRoofs: o.houseRoofs,
     floors: o.floors, heightM: o.height, lean: o.lean || 0,
-    speed: o.speed || c.speed, motion: o.motion || c.motion, start: o.start || c.start, grow: o.grow ?? c.grow,
+    speed: o.speed || TUNED_SPEED[id] || c.speed, rawSpeed: o.speed || c.speed, motion: o.motion || c.motion, start: o.start || c.start, grow: o.grow ?? c.grow,
     time: o.time, timeLabel: time.label,
     sky: time.sky, sun: time.sun, clouds: time.clouds, cloudColor: time.cloudColor, stars: !!time.stars, night: !!time.night,
     glow: time.glow, cityGlow: time.cityGlow, hemi: time.hemi, env: time.env, exposure: time.exposure,
     snow: !!(o.snow ?? time.snow), groundColor: GROUND[o.scenery] || '#7a7a6a'
   };
-  lvl.difficulty = diffLabel(lvl.speed);
+  lvl.difficulty = diffLabel(index);
   return lvl;
 });
 
