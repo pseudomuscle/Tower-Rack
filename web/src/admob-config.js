@@ -1,9 +1,10 @@
-// ID iklan AdMob. Sekarang memakai ID UJI resmi dari Google (aman diklik,
-// tidak menghasilkan uang, tidak melanggar aturan). Setelah akun AdMob dibuat,
-// ganti REWARDED dengan ID unit iklan asli dan set TESTING = false.
-// ID aplikasi AdMob (ca-app-pub-...~...) diatur terpisah lewat variabel
-// ADMOB_APP_ID di GitHub (lihat .github/workflows/android.yml).
+// ID iklan AdMob milik Menara Lapis.
+//
+// TESTING = true → plugin otomatis memakai unit iklan UJI dari Google walaupun
+// ID asli sudah terpasang, jadi aman dicoba di HP sendiri tanpa risiko akun
+// AdMob ditangguhkan. Ubah ke false HANYA sebelum rilis produksi di Play Store.
+// ID aplikasi (ca-app-pub-...~...) ada di android/app/build.gradle.
 export const ADMOB = {
   TESTING: true,
-  REWARDED: 'ca-app-pub-3940256099942544/5224354917' // unit uji "rewarded" dari Google
+  REWARDED: 'ca-app-pub-8084989145384121/6226320274' // unit "Revive" (Rewarded)
 };

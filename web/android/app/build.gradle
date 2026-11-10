@@ -10,8 +10,8 @@ android {
         // Nomor versi diisi otomatis oleh GitHub Actions (VERSION_CODE = nomor run).
         versionCode((System.getenv("VERSION_CODE") ?: "1").toInteger())
         versionName(System.getenv("VERSION_NAME") ?: "0.1.0")
-        // ID aplikasi AdMob. Bawaan = ID uji resmi Google; ganti lewat variabel ADMOB_APP_ID.
-        manifestPlaceholders = [admobAppId: System.getenv("ADMOB_APP_ID") ?: "ca-app-pub-3940256099942544~3347511713"]
+        // ID aplikasi AdMob Menara Lapis (bukan rahasia). Bisa ditimpa lewat variabel ADMOB_APP_ID.
+        manifestPlaceholders = [admobAppId: System.getenv("ADMOB_APP_ID") ?: "ca-app-pub-8084989145384121~3565157053"]
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
