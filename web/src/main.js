@@ -83,6 +83,14 @@ function retry() {
   game.restart();
 }
 
+/** Bingkai menara di ruang kosong di atas lembar hasil (tinggi lembar beda di tiap HP). */
+function fitFrame(kind, sheetId) {
+  const sheet = $(sheetId).querySelector('.sheet');
+  const h = stage.clientHeight;
+  if (!sheet || !h) return;
+  game.setFrameBottom(kind, (sheet.getBoundingClientRect().top - stage.getBoundingClientRect().top) / h - 0.02);
+}
+
 /* ---------- Kejadian dari mesin game ---------- */
 const hooks = {
   onStart(info) {
@@ -126,6 +134,7 @@ const hooks = {
       $('failMenu').textContent = 'Menu';
     }
     $('failSheet').hidden = false;
+    fitFrame('failed', 'failSheet'); setTimeout(() => fitFrame('failed', 'failSheet'), 400); // ukur lagi setelah animasi muncul
     $('failRetry').focus();
   },
   onComplete(info) {
@@ -152,6 +161,7 @@ const hooks = {
       nextBtn.onclick = () => show('album');
     }
     $('doneSheet').hidden = false;
+    fitFrame('complete', 'doneSheet'); setTimeout(() => fitFrame('complete', 'doneSheet'), 400); // ukur lagi setelah animasi muncul
     nextBtn.focus();
   },
   onSnapshot(url, b) { if (b && !b.free) saveSnapshot(b.id, url); }

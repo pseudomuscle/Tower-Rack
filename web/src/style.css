@@ -161,3 +161,5 @@ p { margin: 0; }
 
 .hud .icon-btn.mute { left: auto; right: calc(12px + var(--safe-r)); font-size: 20px; padding-bottom: 0; }
 .btn[aria-pressed="false"] { color: var(--muted); }
+
+.note a { color: var(--muted); }

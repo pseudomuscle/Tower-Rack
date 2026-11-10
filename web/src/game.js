@@ -48,6 +48,9 @@ export class Game {
     scene.add(sun, sun.target);
     this.sunDir = new THREE.Vector3(6, 14, 3).normalize();
     this.shadowHalf = 0;
+    // Pita layar (porsi dari atas) tempat menara dibingkai saat selesai/gagal.
+    // Batas bawah disesuaikan dengan tinggi lembar hasil lewat setFrameBottom().
+    this.band = { complete: [0.04, 0.5], failed: [0.1, 0.64] };
 
     this.tower = new THREE.Group();
     scene.add(this.tower);
@@ -323,9 +326,9 @@ export class Game {
       const lean = this.b.lean || 0;
       this.tower.rotation.z += (-lean - this.tower.rotation.z) * Math.min(1, dt * 1.2);
       this.angle += dt * 0.22;
-      this.frameWhole(0.04, 0.5, dt);
+      this.frameWhole(...this.band.complete, dt);
     } else if (this.state === 'failed') {
-      this.frameWhole(0.1, 0.64, dt);
+      this.frameWhole(...this.band.failed, dt);
     } else {
       this.dist += (PLAY_DIST - this.dist) * Math.min(1, dt * 3);
       this.lookY += (this.camY + 0.6 - this.lookY) * Math.min(1, dt * 4);
@@ -352,11 +355,20 @@ export class Game {
     if (this.crown) this.crown.scale.setScalar(1);
     this.tower.rotation.z = -(this.b.lean || 0);
     this.angle = Math.PI / 4 + 0.5;
-    this.frameWhole(0.04, 0.5, 1);
+    this.frameWhole(...this.band.complete, 1);
     this.placeCamera();
     this.updateShadow();
     this.renderer.render(this.scene, this.camera);
     try { this.hooks.onSnapshot?.(this.capture(), this.b); } catch (e) { /* snapshot opsional */ }
+  }
+
+  /**
+   * Atur batas bawah area bingkai (porsi tinggi layar dari atas) sesuai posisi
+   * lembar hasil, supaya menara tidak tertutup di layar yang lebih pendek.
+   */
+  setFrameBottom(kind, frac) {
+    const top = kind === 'failed' ? 0.08 : 0.04;
+    this.band[kind] = [top, Math.max(top + 0.22, Math.min(0.92, frac))];
   }
 
   /** Kotak bayangan matahari mengikuti bagian menara yang sedang terlihat. */
@@ -379,7 +391,7 @@ export class Game {
   capture() {
     const src = this.renderer.domElement;
     const W = src.width, Hh = src.height;
-    const ch = Math.round(Hh * 0.54), cw = Math.min(W, Math.round(ch * 0.75));
+    const ch = Math.round(Hh * Math.min(0.9, this.band.complete[1] + 0.04)), cw = Math.min(W, Math.round(ch * 0.75));
     const out = document.createElement('canvas');
     out.width = 240; out.height = 320;
     const g = out.getContext('2d');
