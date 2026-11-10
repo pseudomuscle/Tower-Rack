@@ -5,6 +5,7 @@ import { H, START, RANGE, axisFor, speedFor, resolveDrop, metersAt, canRevive, a
 import { createLook, disposeObject } from './textures.js';
 import { buildCrown } from './crowns.js';
 import { buildScenery, makeEnvironment, buildSky } from './scenery.js';
+import { effectiveQuality, reportSlow, QUALITY } from './quality.js';
 
 // Kamera perspektif seperti foto: lensa 50°, sedikit menunduk, sehingga
 // cakrawala dan langit terlihat di bagian atas layar.
@@ -27,10 +28,11 @@ export class Game {
     this.stage = stage;
     this.hooks = hooks;
     const r = (this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true }));
-    r.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    this.q = QUALITY[effectiveQuality()];
+    r.setPixelRatio(Math.min(window.devicePixelRatio || 1, this.q.pixelRatio));
     r.toneMapping = THREE.ACESFilmicToneMapping;
     r.toneMappingExposure = 1.0;
-    r.shadowMap.enabled = true;
+    r.shadowMap.enabled = this.q.shadows;
     r.shadowMap.type = THREE.PCFSoftShadowMap;
     stage.prepend(r.domElement);
 
@@ -40,7 +42,7 @@ export class Game {
     this.hemi = new THREE.HemisphereLight(0xdfefff, 0x6b6b60, 0.6);
     scene.add(this.hemi);
     const sun = (this.sun = new THREE.DirectionalLight(0xfff1dd, 3));
-    sun.castShadow = true;
+    sun.castShadow = this.q.shadows;
     sun.shadow.mapSize.set(1024, 1024);
     sun.shadow.bias = -0.0004;
     sun.shadow.normalBias = 0.03;
@@ -109,7 +111,8 @@ export class Game {
     if (this.sky) { this.scene.remove(this.sky); disposeObject(this.sky); }
     this.b = b;
     this.look = createLook(b);
-    this.env.add(buildScenery(b));
+    this.applyQuality();
+    this.env.add(buildScenery(b, this.q));
     this.envRT = makeEnvironment(this.renderer, b);
     this.sky = buildSky(b);
     this.scene.add(this.sky);
@@ -288,7 +291,9 @@ export class Game {
 
   loop(now) {
     if (!this.active) return;
-    const dt = Math.min(0.05, (now - this.last) / 1000);
+    const raw = (now - this.last) / 1000;
+    const dt = Math.min(0.05, raw);
+    this.watchFps(raw);
     this.last = now;
     const t = now / 1000;
 
@@ -369,6 +374,24 @@ export class Game {
   setFrameBottom(kind, frac) {
     const top = kind === 'failed' ? 0.08 : 0.04;
     this.band[kind] = [top, Math.max(top + 0.22, Math.min(0.92, frac))];
+  }
+
+  /** Terapkan pengaturan grafis (dipanggil tiap memuat level). */
+  applyQuality() {
+    this.q = QUALITY[effectiveQuality()];
+    const pr = Math.min(window.devicePixelRatio || 1, this.q.pixelRatio);
+    if (this.renderer.getPixelRatio() !== pr) { this.renderer.setPixelRatio(pr); this.resize(); }
+    this.renderer.shadowMap.enabled = this.q.shadows;
+    this.sun.castShadow = this.q.shadows;
+    this.fps = { frames: 0, time: 0 };
+  }
+
+  /** Mode otomatis: bila 3 detik pertama bermain di bawah ±30 fps, pakai Hemat mulai level berikutnya. */
+  watchFps(raw) {
+    const f = this.fps;
+    if (!f || f.done || this.state !== 'play' || raw > 0.5) return; // abaikan jeda (mis. aplikasi di latar)
+    f.frames++; f.time += raw;
+    if (f.time >= 3) { f.done = true; if (f.frames / f.time < 30) reportSlow(); }
   }
 
   /** Kotak bayangan matahari mengikuti bagian menara yang sedang terlihat. */

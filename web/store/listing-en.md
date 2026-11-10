@@ -12,7 +12,7 @@ Menara Lapis: Tower Stacker
 Stack floors with one finger and build 60 of the world's famous towers!
 ```
 
-## Deskripsi lengkap (1658/4000)
+## Deskripsi lengkap (1718/4000)
 ```
 Tap at the right moment, stack floor after floor, and complete iconic towers from around the world!
 
@@ -37,6 +37,7 @@ Speed rises gradually and is the same for every player. Pendulum and rhythmic mo
 ✔ No login, no account — just play
 ✔ Playable offline
 ✔ Ads only when you choose to watch one to continue
+✔ One-time "Remove ads" option: instant revives with no ads
 ✔ Free Mode to stack as high as you can
 
 Building names and models are original and only inspired by real landmarks.

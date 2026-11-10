@@ -32,7 +32,7 @@ https://pseudomuscle.github.io/Tower-Rack/privacy.html
   | Humor kasar | **Tidak** |
   | Interaksi antar pengguna, chat, berbagi konten buatan pengguna | **Tidak** |
   | Membagikan lokasi pengguna ke pengguna lain | **Tidak** |
-  | Pembelian barang digital dalam aplikasi | **Tidak** |
+  | Pembelian barang digital dalam aplikasi | **Ya** ("Hapus iklan", sekali beli) |
   | Aplikasi berisi iklan | **Ya** (kalau ditanyakan) |
 - Hasil yang diharapkan: rating untuk **semua umur** (mis. PEGI 3 / IARC 3+).
 
@@ -81,7 +81,24 @@ file, kalender, kontak, riwayat penjelajahan, info penginstalan aplikasi lain, l
 - Email kontak: email developer kamu (tampil publik di Play Store)
 - Situs web (opsional): `https://pseudomuscle.github.io/Tower-Rack/`
 
-## 10. Aset grafis (Main store listing)
+## 10. Produk dalam aplikasi "Hapus iklan"
+Perlu **profil pembayaran (payments profile)** di Play Console lebih dulu:
+**Setelan → Profil pembayaran** — isi data dan rekening bank untuk menerima uang penjualan.
+(Ini dikelola Google, tidak memakai Midtrans.)
+
+Lalu: **Monetisasi → Produk → Produk dalam aplikasi → Buat produk**
+| Kolom | Isi |
+|---|---|
+| ID produk | `hapus_iklan` (harus persis sama dengan di kode) |
+| Nama | Hapus Iklan |
+| Deskripsi | Revive langsung tanpa menonton iklan, selamanya. |
+| Harga | mis. **Rp15.000** (bebas; Google mengonversi ke mata uang lain) |
+
+Simpan, lalu **Aktifkan**. Produk hanya bisa dibuat setelah ada AAB yang diunggah ke salah satu jalur
+(uji tertutup sudah cukup). Untuk mencoba membeli tanpa ditagih, tambahkan email Gmail-mu di
+**Setelan → Pengujian lisensi (License testing)**.
+
+## 11. Aset grafis (Main store listing)
 | Aset | File | Ukuran |
 |---|---|---|
 | Ikon aplikasi | `web/store/icon-512.png` | 512×512 |

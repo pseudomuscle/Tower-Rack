@@ -33,6 +33,12 @@ p { margin: 0; }
 .bar i { display: block; height: 100%; width: 0; background: #fff; border-radius: inherit; transition: width .25s; }
 #streak { margin-top: 8px; font-family: var(--display); font-size: 20px; color: #fff; background: var(--pink); padding: 0 12px; border-radius: 999px; opacity: 0; transition: opacity .2s; }
 #streak.on { opacity: 1; }
+.linkbtn { background: none; border: 0; color: var(--muted); font: 600 13px var(--body); text-decoration: underline; cursor: pointer; padding: 6px; align-self: center; }
+.premium { display: grid; grid-template-columns: 1fr auto; gap: 6px 12px; align-items: center; background: linear-gradient(135deg, #3a2a10, #1c2431 60%); border: 1px solid #6b5220; border-radius: 16px; padding: 12px 14px; }
+.premium b { display: block; font: 800 18px var(--display); color: var(--accent); }
+.premium span { font-size: 13px; color: #e6dccb; }
+.premium .linkbtn { grid-column: 1 / -1; justify-self: start; padding: 0; }
+.premium.owned { grid-template-columns: 1fr; }
 .hud.compact .hud-main { opacity: 0; transition: opacity .3s; }
 
 .cover { position: absolute; left: calc(16px + var(--safe-l)); right: calc(16px + var(--safe-r)); bottom: calc(24px + var(--safe-b));

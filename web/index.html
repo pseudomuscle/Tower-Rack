@@ -77,10 +77,19 @@
       <button class="btn" id="btnAlbum">Album Koleksi <span id="albumCount"></span></button>
       <button class="btn" id="btnFree">Mode bebas</button>
     </div>
+    <div class="premium" id="premiumBox" hidden>
+      <div>
+        <b id="premiumTitle">Hapus iklan</b>
+        <span id="premiumText">Sekali beli: revive langsung tanpa menonton iklan, selamanya.</span>
+      </div>
+      <button class="btn primary" id="btnPremium">Beli</button>
+      <button class="linkbtn" id="btnRestore">Pulihkan pembelian</button>
+    </div>
     <div class="row">
       <button class="btn" id="btnMusic" aria-pressed="true">♪ Musik: nyala</button>
       <button class="btn" id="btnSfx" aria-pressed="true">🔊 Efek: nyala</button>
     </div>
+    <button class="btn" id="btnGraphics">Grafis: Otomatis</button>
     <div id="regionList" class="regions"></div>
     <details class="panel">
       <summary>Data iklan (uji)</summary>
@@ -153,6 +162,7 @@
       <div class="actions" id="adActions">
         <button class="btn primary" id="adWatch">▶ Tonton iklan &amp; lanjut</button>
         <button class="btn ghost" id="adSkip">Tidak, terima kasih</button>
+        <button class="linkbtn" id="adUpsell" hidden>Atau hapus iklan selamanya</button>
       </div>
     </div>
   </div>
