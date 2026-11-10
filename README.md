@@ -32,6 +32,9 @@ Dibungkus dengan **Capacitor 8** (`web/android/`) dan dibangun oleh workflow **A
   Ubah ke `false` hanya tepat sebelum rilis produksi.
 - ID aplikasi: `io.github.pseudomuscle.menaralapis` (tidak bisa diubah setelah diunggah ke Play Store).
 - Ikon, layar pembuka, dan grafis toko dibuat oleh `web/scripts/make-icons.py`; grafis toko ada di `web/store/`.
+- **Bahan Play Store** di `web/store/`: teks halaman toko (`listing-id.md`, `listing-en.md`), screenshot 1080×1920
+  (`screenshots/`), dan panduan isian formulir Play Console (`play-console-jawaban.md`).
+- **Kebijakan privasi:** `https://pseudomuscle.github.io/Tower-Rack/privacy.html` (sumber: `web/public/privacy.html`).
 
 ## Isi game sekarang
 
